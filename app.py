@@ -1038,6 +1038,9 @@ class App:
         self.dbprev.delete("1.0", "end")
         self.dbprev.insert("end", "\n".join(lines))
         self.dbprev.config(state="disabled")
+        # Populate Tab 5 hymn mapping with same MP3 code/file/URL so user only fills hymn title
+        self._refresh_tab5()
+        self._s("Βάση δεδομένων και Αντιστοίχιση Ύμνων ενημερώθηκαν.")
 
 
 if __name__ == "__main__":
