@@ -2,6 +2,7 @@
 """ToFanari — Main GUI application."""
 
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -406,8 +407,26 @@ class App:
             relief="flat",
             bd=5,
         ).pack(side="left", fill="x", expand=True)
-        _btn(row_mp3, "Αναζήτηση…", self._browse_mp3_folder, width=14).pack(side="right", padx=(6, 0))
-        _btn(card, "🔊  Έλεγχος MP3", self._validate_mp3, bg=GREEN).pack(fill="x", pady=4)
+        _btn(row_mp3, "Αναζήτηση…", self._browse_mp3_folder, width=14).pack(
+            side="right", padx=(6, 0)
+        )
+        # MP3 tools: validate + rename/copy
+        row_mp3_btns = tk.Frame(card, bg=WHITE)
+        row_mp3_btns.pack(fill="x", pady=3)
+        _btn(
+            row_mp3_btns,
+            "🔊  Έλεγχος MP3",
+            self._validate_mp3,
+            bg=GREEN,
+            width=18,
+        ).pack(side="left", padx=(0, 6))
+        _btn(
+            row_mp3_btns,
+            "Μετονομασία MP3",
+            self.rename_mp3,
+            bg=MID_RED,
+            width=18,
+        ).pack(side="left")
         tk.Frame(card, bg=GREY_MED, height=1).pack(fill="x", pady=12)
         _btn(
             card,
@@ -823,12 +842,132 @@ class App:
             messagebox.showinfo("Έλεγχος MP3", "Όλα τα αναμενόμενα αρχεία MP3 βρέθηκαν.")
         else:
             self._s("⚠️ Λείπουν αρχεία MP3")
-            messagebox.showwarning(
-                "Λείπουν αρχεία MP3",
-                "Δεν βρέθηκαν τα ακόλουθα αρχεία:\n\n"
-                + "\n".join(missing[:25])
-                + ("\n…" if len(missing) > 25 else ""),
+            # Offer automatic rename/copy when expected files are missing
+            msg = (
+                "Δεν βρέθηκαν όλα τα αναμενόμενα αρχεία MP3 "
+                f"για τον κωδικό βιβλίου {code}.\n\n"
+                "Θέλετε να γίνει αυτόματη μετονομασία ή αντιγραφή "
+                "των αρχείων σε μορφή BOOKCODE-###.mp3;"
             )
+            if messagebox.askyesno("Λείπουν αρχεία MP3", msg):
+                # Let the dedicated tool handle preview, confirmation and processing
+                self.rename_mp3()
+            else:
+                messagebox.showwarning(
+                    "Λείπουν αρχεία MP3",
+                    "Δεν βρέθηκαν τα ακόλουθα αρχεία:\n\n"
+                    + "\n".join(missing[:25])
+                    + ("\n…" if len(missing) > 25 else ""),
+                )
+
+    def rename_mp3(self):
+        """Rename or copy MP3 files to BOOKCODE-###.mp3 in a selected folder."""
+        code = (self.dv["code"].get() or "").strip()
+        if not code:
+            messagebox.showerror(
+                "Κωδικός Βιβλίου",
+                "Ο Κωδικός Βιβλίου είναι υποχρεωτικός (π.χ. AN01) για τη μετονομασία MP3.",
+            )
+            return
+        # Choose MP3 folder (default to existing MP3 folder or working folder)
+        initial = (self.dv["mp3_fold"].get() or "").strip() or self.fold.get().strip()
+        folder = filedialog.askdirectory(
+            title="Επιλογή φακέλου MP3 για μετονομασία", initialdir=initial or None
+        )
+        if not folder:
+            return
+        self.dv["mp3_fold"].set(folder)
+        self._s(f"Φάκελος MP3: {folder}")
+        try:
+            names = os.listdir(folder)
+        except OSError as exc:
+            messagebox.showerror("Σφάλμα", f"Δεν ήταν δυνατή η ανάγνωση φακέλου MP3:\n{exc}")
+            return
+        mp3_files = [n for n in names if n.lower().endswith(".mp3")]
+        if not mp3_files:
+            messagebox.showinfo("Πληροφορία", "Δεν βρέθηκαν αρχεία MP3 σε αυτόν τον φάκελο.")
+            return
+        mp3_files.sort()
+        if len(mp3_files) > 999:
+            messagebox.showerror(
+                "Πάρα πολλά αρχεία",
+                "Υποστηρίζονται μέχρι 999 αρχεία MP3 (BOOKCODE-001 έως BOOKCODE-999).",
+            )
+            return
+        mappings = []
+        already_ok = 0
+        conflicts = []
+        code_clean = code.strip()
+        for idx, name in enumerate(mp3_files, start=1):
+            new_base = f"{code_clean}-{idx:03d}.mp3"
+            old_path = os.path.join(folder, name)
+            new_path = os.path.join(folder, new_base)
+            if name.lower() == new_base.lower():
+                already_ok += 1
+                continue
+            if os.path.exists(new_path) and os.path.normcase(new_path) != os.path.normcase(old_path):
+                conflicts.append((name, new_base))
+                continue
+            mappings.append((old_path, new_path, name, new_base))
+        if not mappings and not conflicts:
+            messagebox.showinfo(
+                "Μετονομασία MP3",
+                "Όλα τα αρχεία MP3 είναι ήδη στη σωστή μορφή BOOKCODE-###.mp3.",
+            )
+            self._validate_mp3()
+            return
+        # Build preview text
+        lines = [f"{old}  →  {new}" for (_, _, old, new) in mappings]
+        preview = "\n".join(lines[:30])
+        if len(lines) > 30:
+            preview += f"\n… ({len(lines) - 30} ακόμη αντιστοιχίσεις)"
+        if conflicts:
+            preview += "\n\nΠροειδοποίηση: Τα παρακάτω δεν θα αλλάξουν λόγω σύγκρουσης ονομάτων:\n"
+            preview += "\n".join(f"{o}  ⇢  {n}" for (o, n) in conflicts[:20])
+            if len(conflicts) > 20:
+                preview += f"\n… ({len(conflicts) - 20} ακόμη συγκρούσεις)"
+        # Ask for COPY (default, safer)
+        msg = (
+            f"Κωδικός Βιβλίου: {code_clean}\n"
+            f"Φάκελος: {folder}\n\n"
+            "Προεπισκόπηση μετονομασιών (παλιό → νέο):\n\n"
+            f"{preview}\n\n"
+            "Προτείνεται ΛΕΙΤΟΥΡΓΙΑ ΑΝΤΙΓΡΑΦΗΣ (δεν τροποποιεί τα αρχικά αρχεία).\n\n"
+            "Θέλετε να συνεχίσετε με ΑΝΤΙΓΡΑΦΗ;"
+        )
+        do_copy = messagebox.askyesno("Μετονομασία MP3", msg)
+        mode = "copy" if do_copy else "rename"
+        if not do_copy:
+            if not messagebox.askyesno(
+                "Μετονομασία MP3",
+                "Θέλετε να συνεχίσετε με ΜΕΤΟΝΟΜΑΣΙΑ των αρχικών αρχείων;",
+            ):
+                return
+        processed = 0
+        errors = 0
+        for old_path, new_path, _, _ in mappings:
+            try:
+                if mode == "copy":
+                    if os.path.exists(new_path) and os.path.normcase(new_path) != os.path.normcase(old_path):
+                        continue
+                    shutil.copy2(old_path, new_path)
+                else:
+                    if os.path.exists(new_path) and os.path.normcase(new_path) != os.path.normcase(old_path):
+                        continue
+                    os.rename(old_path, new_path)
+                processed += 1
+            except Exception:
+                errors += 1
+        skipped = already_ok + len(conflicts)
+        summary = (
+            f"Σύνολο αρχείων MP3: {len(mp3_files)}\n"
+            f"Επεξεργάστηκαν ({'αντιγράφηκαν' if mode=='copy' else 'μετονομάστηκαν'}): {processed}\n"
+            f"Παραλείφθηκαν (ήδη σωστά / συγκρούσεις): {skipped}\n"
+            f"Σφάλματα: {errors}"
+        )
+        messagebox.showinfo("Μετονομασία MP3", summary)
+        # Re-run validation using the updated folder
+        self._validate_mp3()
 
     def _gen_db(self):
         if not self.mrks:
