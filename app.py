@@ -2,10 +2,17 @@
 """ToFanari — Main GUI application."""
 
 import os
+import subprocess
+import sys
 import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from typing import List
+
+try:
+    from PIL import ImageTk
+except ImportError:
+    ImageTk = None
 
 from config import (
     APP_TITLE,
@@ -37,6 +44,7 @@ from pdf_ops import (
     detect_markers,
     extract_preview_text,
     extract_hymn_preview_lines,
+    render_page_thumbnail,
 )
 from validators import (
     validate_empty_book_code,
@@ -78,6 +86,53 @@ def _btn(
     if width:
         b.config(width=width)
     return b
+
+
+def _enable_clipboard_paste(root, widget):
+    """Enable Ctrl+V, Shift+Insert, and right-click paste for Entry or Text widgets.
+    Works with Greek and other keyboard layouts (keycode-based fallback).
+    """
+    def do_paste(event=None):
+        try:
+            widget.event_generate("<<Paste>>")
+        except Exception:
+            try:
+                text = root.clipboard_get()
+                if text:
+                    if isinstance(widget, tk.Text):
+                        if widget.selection_present():
+                            widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                        widget.insert(tk.INSERT, text)
+                    else:
+                        if widget.selection_present():
+                            widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                        widget.insert(tk.INSERT, text)
+            except Exception:
+                pass
+        return "break"
+
+    def on_key(event):
+        # keycode 86 = physical V key; Ctrl mask = 0x4
+        if event.keycode == 86 and (event.state & 0x4):
+            if event.keysym.lower() != "v":
+                do_paste(event)
+                return "break"
+
+    def show_context_menu(event):
+        menu = tk.Menu(widget, tearoff=0)
+        menu.add_command(label="Επικόλληση", command=lambda: do_paste())
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    widget.bind("<Control-v>", lambda e: do_paste(e), add="+")
+    widget.bind("<Control-V>", lambda e: do_paste(e), add="+")
+    widget.bind("<Shift-Insert>", lambda e: do_paste(e), add="+")
+    widget.bind("<Key>", on_key, add="+")
+    widget.bind("<Button-3>", show_context_menu, add="+")
+    if sys.platform == "darwin":
+        widget.bind("<Command-v>", lambda e: do_paste(e), add="+")
 
 
 # ─────────────────────────── Main Application ────────────────────────
@@ -407,26 +462,53 @@ class App:
             fg=DARK_RED,
             font=("Arial", 10, "bold"),
         ).pack(anchor="w", padx=8, pady=(6, 2))
-        self.preview_title_lbl = tk.Label(
-            preview_frame,
-            text="—",
-            bg=LIGHT_RED,
-            fg=TEXT_DARK,
-            font=("Arial", 11, "bold"),
-            anchor="w",
-        )
-        self.preview_title_lbl.pack(anchor="w", padx=8, pady=(0, 4))
-        self.preview_text_lbl = tk.Label(
-            preview_frame,
-            text="Κάντε κλικ σε μια γραμμή για να δείτε την αρχή του ύμνου.",
-            bg=LIGHT_RED,
+        # Content row: large thumbnail on left, hymn code + first 1–2 lines on right
+        preview_content = tk.Frame(preview_frame, bg=LIGHT_RED)
+        preview_content.pack(fill="x", padx=8, pady=(0, 8))
+        # Left: large clickable thumbnail
+        thumbnail_frame = tk.Frame(preview_content, bg=GREY_LIGHT, bd=1, relief="solid", cursor="hand2")
+        thumbnail_frame.pack(side="left", padx=(0, 12), pady=0)
+        self.preview_thumbnail_lbl = tk.Label(
+            thumbnail_frame,
+            text="Κάντε κλικ σε γραμμή",
+            bg=GREY_LIGHT,
             fg=TEXT_DARK,
             font=("Arial", 9),
-            anchor="nw",
-            justify="left",
-            wraplength=700,
+            cursor="hand2",
+            anchor="center",
         )
-        self.preview_text_lbl.pack(anchor="w", padx=8, pady=(0, 8), fill="x")
+        self.preview_thumbnail_lbl.pack(padx=6, pady=6)
+        self.preview_thumbnail_lbl.bind("<Button-1>", lambda e: self._open_preview_pdf())
+        thumbnail_frame.bind("<Button-1>", lambda e: self._open_preview_pdf())
+        self._preview_photo = None
+        self._preview_pdf_path = ""
+        self._preview_page = 0
+        # Right: hymn code + first 1–2 lines (horizontal text)
+        right_frame = tk.Frame(preview_content, bg=LIGHT_RED)
+        right_frame.pack(side="left", fill="both", expand=True)
+        self.preview_code_lbl = tk.Label(
+            right_frame,
+            text="—",
+            bg=LIGHT_RED,
+            fg=DARK_RED,
+            font=("Arial", 12, "bold"),
+            anchor="w",
+        )
+        self.preview_code_lbl.pack(anchor="w", pady=(0, 4))
+        self.preview_text = tk.Text(
+            right_frame,
+            wrap="word",
+            height=3,
+            font=("Arial", 10),
+            bg=LIGHT_RED,
+            fg=TEXT_DARK,
+            relief="flat",
+            state="disabled",
+        )
+        self.preview_text.pack(anchor="w", fill="x", expand=True)
+        self.preview_text.config(state="normal")
+        self.preview_text.insert("1.0", "Κάντε κλικ σε μια γραμμή για να δείτε την αρχή του ύμνου.")
+        self.preview_text.config(state="disabled")
         self._tab5_preview_row_index = -1
 
     def _on_tab_changed(self, event):
@@ -487,9 +569,15 @@ class App:
                 anchor="w",
                 justify="left",
             ).pack(side="left", padx=2, pady=2)
-            tk.Entry(row, textvariable=self.assignments[i]["song_title"], width=28, font=("Arial", 9)).pack(side="left", padx=2, pady=2)
-            tk.Entry(row, textvariable=self.assignments[i]["echos"], width=8, font=("Arial", 9)).pack(side="left", padx=2, pady=2)
-            tk.Entry(row, textvariable=self.assignments[i]["section"], width=10, font=("Arial", 9)).pack(side="left", padx=2, pady=2)
+            e_title = tk.Entry(row, textvariable=self.assignments[i]["song_title"], width=28, font=("Arial", 9))
+            e_title.pack(side="left", padx=2, pady=2)
+            _enable_clipboard_paste(self.root, e_title)
+            e_echos = tk.Entry(row, textvariable=self.assignments[i]["echos"], width=8, font=("Arial", 9))
+            e_echos.pack(side="left", padx=2, pady=2)
+            _enable_clipboard_paste(self.root, e_echos)
+            e_section = tk.Entry(row, textvariable=self.assignments[i]["section"], width=10, font=("Arial", 9))
+            e_section.pack(side="left", padx=2, pady=2)
+            _enable_clipboard_paste(self.root, e_section)
             mp3_code = get_mp3_code(code, i + 1)
             tk.Label(row, text=mp3_code, width=10, bg=GREY_LIGHT, fg=TEXT_DARK, font=("Courier", 9)).pack(side="left", padx=2, pady=2)
             tk.Label(row, text=get_mp3_file(code, i + 1), width=14, bg=GREY_LIGHT, fg=TEXT_DARK, font=("Courier", 9)).pack(side="left", padx=2, pady=2)
@@ -498,7 +586,7 @@ class App:
             url_lbl = tk.Label(row, text=url_short, width=48, bg=GREY_LIGHT, fg=TEXT_DARK, font=("Courier", 8), anchor="w")
             url_lbl.pack(side="left", padx=2, pady=2, fill="x", expand=True)
             for w in row.winfo_children():
-                if isinstance(w, tk.Label):
+                if isinstance(w, (tk.Label, tk.Entry)):
                     w.bind("<Button-1>", lambda e, idx=i: self._on_preview_row(idx))
         self._s("Ανανέωση Αντιστοίχισης")
 
@@ -510,18 +598,104 @@ class App:
         if row_index >= len(ordered):
             return
         m = ordered[row_index]
-        title = (self.assignments[row_index]["song_title"].get() or "").strip() or f"#{row_index + 1:03d}"
-        self.preview_title_lbl.config(text=title)
+        # Use actual page from marker (1-based PDF page); never default to 1
+        page_number = m.page
+        if page_number < 1:
+            page_number = 0
+        hymn_code = f"#{row_index + 1:03d}"
+        title = (self.assignments[row_index]["song_title"].get() or "").strip()
+        display_code = f"{hymn_code}  {title}" if title else hymn_code
+        self.preview_code_lbl.config(text=display_code)
         pdf = self.pdf_path.get().strip()
-        if pdf and os.path.isfile(pdf):
-            lines = extract_hymn_preview_lines(pdf, m, max_lines=5)
-            if lines:
-                self.preview_text_lbl.config(text=lines)
-            else:
-                self.preview_text_lbl.config(text="Preview unavailable for this piece.")
-        else:
-            self.preview_text_lbl.config(text="Preview unavailable for this piece.")
+        self._preview_pdf_path = pdf
+        self._preview_page = page_number
         self._tab5_preview_row_index = row_index
+        # First 1–2 lines of hymn text
+        if pdf and os.path.isfile(pdf):
+            content = extract_hymn_preview_lines(pdf, m, max_lines=2, max_chars_per_line=90)
+            content = content if content else "Preview unavailable for this piece."
+        else:
+            content = "Preview unavailable for this piece."
+        self.preview_text.config(state="normal")
+        self.preview_text.delete("1.0", tk.END)
+        self.preview_text.insert("1.0", content)
+        self.preview_text.config(state="disabled")
+        # Debug: verify page before rendering (remove after fixing)
+        if pdf:
+            short_pdf = os.path.basename(pdf)
+            print(f"Preview row={hymn_code} page={page_number} pdf={short_pdf}")
+        self._update_preview_thumbnail(pdf, page_number)
+
+    def _update_preview_thumbnail(self, pdf_path: str, page_number: int):
+        """Render and display PDF page thumbnail; show placeholder on failure."""
+        if not pdf_path or not os.path.isfile(pdf_path):
+            self.preview_thumbnail_lbl.config(image="", text="Thumbnail\nunavailable", compound="center")
+            self._preview_photo = None
+            return
+        if not ImageTk:
+            self.preview_thumbnail_lbl.config(image="", text="Thumbnail\nunavailable", compound="center")
+            self._preview_photo = None
+            return
+        if page_number < 1:
+            self.preview_thumbnail_lbl.config(image="", text="Thumbnail\nunavailable", compound="center")
+            self._preview_photo = None
+            return
+        img = render_page_thumbnail(pdf_path, page_number, max_width=230)
+        if img is None:
+            self.preview_thumbnail_lbl.config(image="", text="Thumbnail\nunavailable", compound="center")
+            self._preview_photo = None
+            return
+        photo = ImageTk.PhotoImage(img)
+        self._preview_photo = photo
+        self.preview_thumbnail_lbl.config(image=photo, text="", compound="image")
+        self.preview_thumbnail_lbl.image = photo
+
+    def _find_acrobat_reader(self) -> str | None:
+        """Find Adobe Acrobat Reader on Windows. Returns exe path or None."""
+        if sys.platform != "win32":
+            return None
+        common_paths = [
+            os.path.join(os.environ.get("ProgramFiles", ""), "Adobe", "Acrobat DC", "Acrobat", "Acrobat.exe"),
+            os.path.join(os.environ.get("ProgramFiles", ""), "Adobe", "Acrobat Reader DC", "Reader", "AcroRd64.exe"),
+            os.path.join(os.environ.get("ProgramFiles(x86)", ""), "Adobe", "Acrobat Reader DC", "Reader", "AcroRd32.exe"),
+            os.path.join(os.environ.get("ProgramFiles(x86)", ""), "Adobe", "Acrobat Reader 2023", "Reader", "AcroRd32.exe"),
+            os.path.join(os.environ.get("ProgramFiles(x86)", ""), "Adobe", "Acrobat Reader 2017", "Reader", "AcroRd32.exe"),
+        ]
+        for p in common_paths:
+            if p and os.path.isfile(p):
+                return p
+        return None
+
+    def _open_preview_pdf(self):
+        """Open the selected PDF at the correct page if possible.
+
+        Note: os.startfile() always opens page 1 because the default Windows PDF
+        viewer (Edge or built-in) ignores the #page=N fragment in the path.
+        We try Adobe Acrobat Reader with /A "page=N" when available.
+        """
+        path = self._preview_pdf_path or self.pdf_path.get().strip()
+        if not path or not os.path.isfile(path):
+            self._s("Δεν υπάρχει PDF για άνοιγμα.")
+            return
+        path = os.path.normpath(path)
+        page = self._preview_page or 0
+        print(f"Open PDF path={path} page={page}")
+
+        try:
+            if sys.platform == "win32":
+                acrobat = self._find_acrobat_reader()
+                if acrobat and page > 1:
+                    subprocess.Popen([acrobat, "/A", f"page={page}", path])
+                    self._s(f"Άνοιγμα σελ. {page}: {os.path.basename(path)}")
+                else:
+                    os.startfile(path)
+                    self._s(f"Άνοιγμα: {os.path.basename(path)}")
+            else:
+                opener = "open" if sys.platform == "darwin" else "xdg-open"
+                subprocess.run([opener, path], check=False)
+                self._s(f"Άνοιγμα: {os.path.basename(path)}")
+        except (OSError, FileNotFoundError) as e:
+            self._s(f"Σφάλμα άνοιγματος: {e}")
 
     def _browse_folder(self):
         d = filedialog.askdirectory(title="Επιλογή φακέλου βιβλίου")

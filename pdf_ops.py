@@ -2,9 +2,12 @@
 """ToFanari — PDF operations: detect markers, apply buttons."""
 
 from dataclasses import dataclass
-from typing import Callable, List, Optional
+from typing import TYPE_CHECKING, Callable, List, Optional
 
 from config import BTN_X, BTN_W, BTN_H, C_BTN, C_WHT, MARKER, WHITE_BG
+
+if TYPE_CHECKING:
+    from PIL.Image import Image
 
 try:
     import fitz
@@ -70,6 +73,39 @@ def extract_hymn_preview_lines(
             ln = ln[: max_chars_per_line - 1] + "…"
         result.append(ln)
     return "\n".join(result).strip()
+
+
+def render_page_thumbnail(
+    pdf_path: str, page_number: int, max_width: int = 230
+) -> Optional["Image"]:
+    """
+    Render a PDF page as a thumbnail image.
+    page_number is 1-based (actual PDF page). Returns PIL Image or None on failure.
+    """
+    if page_number < 1:
+        return None
+    try:
+        from PIL import Image
+
+        doc = fitz.open(pdf_path)
+        page_idx = int(page_number) - 1
+        if page_idx >= len(doc):
+            doc.close()
+            return None
+        page = doc.load_page(page_idx)
+        print(f"  render_page_thumbnail: page_number={page_number} page_idx={page_idx} loading page {page_idx + 1}")
+        rect = page.rect
+        zoom = max_width / rect.width if rect.width > max_width else 1.0
+        mat = fitz.Matrix(zoom, zoom)
+        pix = page.get_pixmap(matrix=mat, alpha=False)
+        doc.close()
+        mode = "RGBA" if pix.alpha else "RGB"
+        img = Image.frombytes(mode, (pix.width, pix.height), pix.samples)
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+        return img
+    except Exception:
+        return None
 
 
 def get_active_markers(markers: List[Marker]) -> List[Marker]:
