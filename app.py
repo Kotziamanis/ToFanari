@@ -54,6 +54,7 @@ from validators import (
     validate_page_numbers,
     validate_missing_mp3,
 )
+from validation_preflight import run_full_validation
 
 
 # ─────────────────────────── UI helpers ──────────────────────────────
@@ -101,18 +102,39 @@ def _clean_preview_for_title(preview: str) -> str:
     return s[:200] if len(s) > 200 else s
 
 
-def clean_original_mp3_title(original_name: str) -> str:
-    """
-    Clean original MP3 filename to use as hymn title:
-    - remove extension
-    - strip leading track numbers / prefixes (e.g. '001 ', '01-', '1. ').
-    """
-    if not original_name:
+def song_title_from_mp3_file(mp3_file: str) -> str:
+    """Return MP3 filename without .mp3 extension. No cleaning or transformation."""
+    if not mp3_file:
         return ""
-    name = os.path.splitext(os.path.basename(original_name))[0].strip()
-    # remove leading digits + optional separator
-    name = re.sub(r"^\s*\d+\s*[-._)]?\s*", "", name).strip()
-    return name
+    return os.path.splitext(os.path.basename(mp3_file))[0]
+
+
+def is_internal_generated_mp3(filename: str, book_code: str) -> bool:
+    """True if filename matches BOOKCODE-NNN.mp3 (already-generated internal format)."""
+    if not filename or not book_code:
+        return False
+    pattern = rf"^{re.escape(book_code)}-\d+\.mp3$"
+    return re.match(pattern, filename, re.IGNORECASE) is not None
+
+
+def get_source_mp3_files(mp3_folder: str, book_code: str) -> List[str]:
+    """Return sorted list of SOURCE MP3 files only (excludes internal BOOKCODE-NNN.mp3)."""
+    if not mp3_folder or not os.path.isdir(mp3_folder):
+        return []
+    files: List[str] = []
+    try:
+        for f in os.listdir(mp3_folder):
+            full = os.path.join(mp3_folder, f)
+            if not os.path.isfile(full):
+                continue
+            if not f.lower().endswith(".mp3"):
+                continue
+            if is_internal_generated_mp3(f, book_code):
+                continue
+            files.append(f)
+    except OSError:
+        return []
+    return sorted(files)
 
 
 def _enable_clipboard_paste(root, widget):
@@ -237,11 +259,13 @@ class App:
         self.tab3 = tk.Frame(nb, bg=CREAM)
         self.tab4 = tk.Frame(nb, bg=CREAM)
         self.tab5 = tk.Frame(nb, bg=CREAM)
+        self.tab6 = tk.Frame(nb, bg=CREAM)
         nb.add(self.tab1, text="  1. Επιλογή Βιβλίου  ")
         nb.add(self.tab2, text="  2. Σήμανση PDF  ")
         nb.add(self.tab3, text="  3. Έλεγχος Κουμπιών  ")
         nb.add(self.tab4, text="  4. Βάση Δεδομένων  ")
         nb.add(self.tab5, text="  5. Αντιστοίχιση Ύμνων  ")
+        nb.add(self.tab6, text="  6. Έλεγχος Βάσης  ")
         nb.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
         self._build_tab1()
@@ -249,6 +273,7 @@ class App:
         self._build_tab3()
         self._build_tab4()
         self._build_tab5()
+        self._build_tab6()
 
         # Status bar
         sb = tk.Frame(self.root, bg=DARK_RED, height=28)
@@ -275,6 +300,61 @@ class App:
         c = tk.Frame(parent, bg=WHITE, bd=0)
         c.pack(fill="both", expand=True, padx=20, pady=16)
         return c
+
+    def get_active_mp3_folder(self) -> str:
+        """
+        Resolve the active MP3 folder for the current book only.
+        - If the user explicitly selected an MP3 folder, use that.
+        - Otherwise use os.path.join(os.path.dirname(pdf_path), "mp3").
+        No parent folders, no recursive scan. Single folder only.
+        """
+        pdf_path = self.pdf_path.get().strip()
+        mp3_folder = (self.dv["mp3_fold"].get() or "").strip() if "mp3_fold" in self.dv else ""
+        if not mp3_folder and pdf_path:
+            mp3_folder = os.path.join(os.path.dirname(pdf_path), "mp3")
+        return mp3_folder or ""
+
+    def get_current_mp3_files(self) -> List[str]:
+        """
+        Return sorted list of MP3 filenames in the active MP3 folder only.
+        Uses os.listdir(mp3_folder) only — no recursive, no subfolders, no cache.
+        Excludes directories via os.path.isfile.
+        """
+        mp3_folder = self.get_active_mp3_folder()
+        if not mp3_folder or not os.path.isdir(mp3_folder):
+            print("[DEBUG] get_current_mp3_files folder: (empty or not dir)")
+            return []
+        try:
+            files = sorted(
+                f for f in os.listdir(mp3_folder)
+                if os.path.isfile(os.path.join(mp3_folder, f)) and f.lower().endswith(".mp3")
+            )
+        except OSError:
+            print("[DEBUG] get_current_mp3_files OSError for folder:", mp3_folder)
+            return []
+        print("[DEBUG] get_current_mp3_files folder:", mp3_folder)
+        print("[DEBUG] get_current_mp3_files count:", len(files))
+        print("[DEBUG] first 20:", files[:20])
+        if len(files) > 1000:
+            print("[DEBUG] WARNING: unusually high MP3 count for folder", mp3_folder)
+        return files
+
+    def reset_mp3_runtime_state(self) -> None:
+        """
+        Clear all MP3-related runtime state so the app behaves as a fresh MP3 context.
+        Call when PDF or MP3 folder selection changes, and at start of Έλεγχος MP3,
+        Μετονομασία MP3, and Validate Database.
+        """
+        self.mp3_original_name_by_new_file.clear()
+        if hasattr(self, "validation_report_text") and self.validation_report_text.winfo_exists():
+            try:
+                self.validation_report_text.config(state="normal")
+                self.validation_report_text.delete("1.0", tk.END)
+                self.validation_report_text.insert("1.0", "Εκτελέστε «Έλεγχος Βάσης» για νέα αναφορά.")
+                self.validation_report_text.config(state="disabled")
+            except tk.TclError:
+                pass
+        print("[DEBUG] MP3 runtime state reset")
 
     def _label(self, parent, text: str):
         tk.Label(
@@ -559,6 +639,103 @@ class App:
         self.preview_text.config(state="disabled")
         self._tab5_preview_row_index = -1
 
+    def _build_tab6(self):
+        """Preflight validation tab: validate database and source structure, show report in UI."""
+        f = self.tab6
+        self._section_header(f, "🔍  6. Έλεγχος Βάσης")
+        card = self._card(f)
+        tk.Label(
+            card,
+            text="Επαληθεύει ότι η βάση και οι πηγές είναι εσωτερικά σωστές πριν από ανέβασμα ή εξαγωγή.",
+            bg=WHITE,
+            fg=TEXT_DARK,
+            font=("Arial", 9),
+        ).pack(anchor="w", pady=(0, 6))
+        _btn(card, "Έλεγχος Βάσης / Validate Database", self._run_preflight_validation).pack(anchor="w", pady=4)
+        report_frame = tk.Frame(card, bg=WHITE)
+        report_frame.pack(fill="both", expand=True, pady=8)
+        scrollbar = ttk.Scrollbar(report_frame)
+        self.validation_report_text = tk.Text(
+            report_frame,
+            wrap="word",
+            font=("Consolas", 10),
+            bg=GREY_LIGHT,
+            fg=TEXT_DARK,
+            relief="flat",
+            state="disabled",
+            yscrollcommand=scrollbar.set,
+        )
+        scrollbar.config(command=self.validation_report_text.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.validation_report_text.pack(side="left", fill="both", expand=True)
+        self.validation_report_text.tag_configure("status_ok", foreground=GREEN, font=("Consolas", 10, "bold"))
+        self.validation_report_text.tag_configure("status_warnings", foreground="#b8860b", font=("Consolas", 10, "bold"))
+        self.validation_report_text.tag_configure("status_errors", foreground="#c03030", font=("Consolas", 10, "bold"))
+
+    def _run_preflight_validation(self):
+        """Build rows from current state, run full validation, show report in UI."""
+        self.reset_mp3_runtime_state()
+        code = (self.dv["code"].get() or "").strip() or "BOOK"
+        bunny = (self.dv["bunny"].get() or "").strip() or ""
+        pdf = self.pdf_path.get().strip()
+        mp3_folder = self.get_active_mp3_folder()
+        total_mp3 = len(self.get_current_mp3_files())
+        source_mp3 = get_source_mp3_files(mp3_folder, code)
+        source_count = len(source_mp3)
+        generated_count = total_mp3 - source_count
+        ordered = sorted(self.mrks, key=lambda m: (m.page, m.y)) if self.mrks else []
+        rows = []
+        for i, m in enumerate(ordered):
+            if i >= len(self.assignments):
+                break
+            song_title = (self.assignments[i]["song_title"].get() or "").strip()
+            mp3_code = get_mp3_code(code, i + 1)
+            mp3_file = get_mp3_file(code, i + 1)
+            url = get_mp3_url(bunny, code, i + 1) if bunny else ""
+            preview = ""
+            if pdf and os.path.isfile(pdf):
+                preview = extract_preview_text(pdf, m)
+            rows.append({
+                "song_title": song_title,
+                "mp3_code": mp3_code,
+                "mp3_file": mp3_file,
+                "url": url,
+                "page": getattr(m, "page", None),
+                "y": getattr(m, "y", None),
+                "preview_text": preview or "",
+            })
+        result = run_full_validation(
+            rows, mp3_folder, source_count,
+            pdf_path=pdf,
+            total_mp3=total_mp3,
+            source_mp3_count=source_count,
+            generated_mp3_count=generated_count,
+            mp3_files_list=source_mp3[:10],
+        )
+        self.validation_report_text.config(state="normal")
+        self.validation_report_text.delete("1.0", tk.END)
+        report = result.get("report_lines") or []
+        status_text = result.get("status_text") or ""
+        status_kind = result.get("status_kind") or "errors"
+        content = "\n".join(report)
+        self.validation_report_text.insert("1.0", content)
+        # Color the STATUS line (find it and tag it)
+        start = content.find("STATUS:")
+        if start >= 0:
+            end = content.find("\n", start)
+            if end < 0:
+                end = len(content)
+            line_start = "1.0"
+            line_end = "1.0"
+            if start > 0:
+                line_start = self.validation_report_text.index(f"1.0+{start}c")
+            if end > start:
+                line_end = self.validation_report_text.index(f"1.0+{end}c")
+            tag = "status_ok" if status_kind == "ok" else "status_warnings" if status_kind == "warnings" else "status_errors"
+            self.validation_report_text.tag_add(tag, line_start, line_end)
+        self.validation_report_text.config(state="disabled")
+        self._s("Έλεγχος βάσης ολοκληρώθηκε.")
+
     def _on_tab_changed(self, event):
         """Refresh Tab 5 when selected."""
         try:
@@ -597,26 +774,17 @@ class App:
         code = (self.dv["code"].get() or "").strip() or "BOOK"
         bunny = (self.dv["bunny"].get() or "").strip() or DEFAULT_BUNNY_BASE_URL
         pdf = self.pdf_path.get().strip()
+        mp3_folder = self.get_active_mp3_folder()
+        mp3_filenames_sorted = get_source_mp3_files(mp3_folder, code)
         ordered = sorted(self.mrks, key=lambda m: (m.page, m.y))
         for i, m in enumerate(ordered):
             preview = extract_preview_text(pdf, m) if pdf and os.path.isfile(pdf) else ""
-            cleaned_preview = _clean_preview_for_title(preview)
-            # Determine final title with priority:
-            # 1. Existing manual title
-            # 2. Original MP3 filename from rename mapping
-            # 3. Cleaned preview text from PDF
-            existing_title = (self.assignments[i]["song_title"].get() or "").strip()
             mp3_file_name = get_mp3_file(code, i + 1)
-            final_title = existing_title
-            if not final_title:
-                key = mp3_file_name.strip()
-                if key and key in self.mp3_original_name_by_new_file:
-                    original_name = self.mp3_original_name_by_new_file[key]
-                    final_title = clean_original_mp3_title(original_name)
-                elif cleaned_preview:
-                    final_title = cleaned_preview.strip()
-            if not existing_title and final_title:
-                self.assignments[i]["song_title"].set(final_title)
+            if i < len(mp3_filenames_sorted):
+                final_title = song_title_from_mp3_file(mp3_filenames_sorted[i])
+            else:
+                final_title = ""
+            self.assignments[i]["song_title"].set(final_title)
             row = tk.Frame(self.assign_inner, bg=GREY_LIGHT, relief="flat", bd=0, cursor="hand2")
             row.pack(fill="x", pady=1)
             row.bind("<Button-1>", lambda e, idx=i: self._on_preview_row(idx))
@@ -775,14 +943,21 @@ class App:
         )
         if p:
             self.pdf_path.set(p)
+            pdf_dir = os.path.dirname(p)
             if not self.fold.get():
-                self.fold.set(os.path.dirname(p))
+                self.fold.set(pdf_dir)
+            mp3_folder = os.path.join(pdf_dir, "mp3")
+            self.dv["mp3_fold"].set(mp3_folder)
+            self.reset_mp3_runtime_state()
+            print(f"[DEBUG] New PDF selected: {p}")
             self._s(f"PDF: {os.path.basename(p)}")
 
     def _browse_mp3_folder(self):
         d = filedialog.askdirectory(title="Επιλογή φακέλου MP3 για το τρέχον βιβλίο")
         if d:
             self.dv["mp3_fold"].set(d)
+            self.reset_mp3_runtime_state()
+            print(f"[DEBUG] New MP3 folder selected: {d}")
             self._s(f"Φάκελος MP3: {d}")
 
     def _detect(self):
@@ -868,6 +1043,7 @@ class App:
                 "Εκτελέστε πρώτα «Εντοπισμός Markers» (Tab 2).",
             )
             return
+        self.reset_mp3_runtime_state()
         code = (self.dv["code"].get() or "").strip()
         if not code:
             messagebox.showwarning(
@@ -875,17 +1051,27 @@ class App:
                 "Εισάγετε Κωδικό Βιβλίου (π.χ. AN01) για έλεγχο MP3.",
             )
             return
-        mp3_folder = (self.dv["mp3_fold"].get() or "").strip() or self.fold.get().strip()
+        mp3_folder = self.get_active_mp3_folder()
         if not mp3_folder or not os.path.isdir(mp3_folder):
             messagebox.showwarning(
                 "Φάκελος MP3",
-                "Επιλέξτε φάκελο εργασίας (Tab 1) ή φάκελο MP3 για τον έλεγχο.",
+                "Επιλέξτε PDF (Tab 1) ή φάκελο MP3 για τον τρέχοντα κωδικό βιβλίου.",
             )
             return
+        total_mp3 = len(self.get_current_mp3_files())
+        source_mp3 = get_source_mp3_files(mp3_folder, code)
+        source_count = len(source_mp3)
+        generated_count = total_mp3 - source_count
+        stats = (
+            f"Φάκελος MP3: {mp3_folder}\n"
+            f"Σύνολο αρχείων MP3: {total_mp3}\n"
+            f"Πηγές (source): {source_count}\n"
+            f"Εσωτερικά (generated, αγνοούνται): {generated_count}"
+        )
         ok, missing = validate_missing_mp3(mp3_folder, self.mrks, code)
         if ok:
             self._s("✅ Όλα τα MP3 υπάρχουν")
-            messagebox.showinfo("Έλεγχος MP3", "Όλα τα αναμενόμενα αρχεία MP3 βρέθηκαν.")
+            messagebox.showinfo("Έλεγχος MP3", f"Όλα τα αναμενόμενα αρχεία MP3 βρέθηκαν.\n\n{stats}")
         else:
             self._s("⚠️ Λείπουν αρχεία MP3")
             # Offer automatic rename/copy when expected files are missing
@@ -899,15 +1085,17 @@ class App:
                 # Let the dedicated tool handle preview, confirmation and processing
                 self.rename_mp3()
             else:
-                messagebox.showwarning(
-                    "Λείπουν αρχεία MP3",
+                msg = (
                     "Δεν βρέθηκαν τα ακόλουθα αρχεία:\n\n"
                     + "\n".join(missing[:25])
-                    + ("\n…" if len(missing) > 25 else ""),
+                    + ("\n…" if len(missing) > 25 else "")
+                    + f"\n\n{stats}"
                 )
+                messagebox.showwarning("Λείπουν αρχεία MP3", msg)
 
     def rename_mp3(self):
         """Rename or copy MP3 files to BOOKCODE-###.mp3 in a selected folder."""
+        self.reset_mp3_runtime_state()
         code = (self.dv["code"].get() or "").strip()
         if not code:
             messagebox.showerror(
@@ -915,37 +1103,40 @@ class App:
                 "Ο Κωδικός Βιβλίου είναι υποχρεωτικός (π.χ. AN01) για τη μετονομασία MP3.",
             )
             return
-        # Choose MP3 folder (default to existing MP3 folder or working folder)
-        initial = (self.dv["mp3_fold"].get() or "").strip() or self.fold.get().strip()
-        folder = filedialog.askdirectory(
-            title="Επιλογή φακέλου MP3 για μετονομασία", initialdir=initial or None
-        )
-        if not folder:
-            return
-        self.dv["mp3_fold"].set(folder)
-        self._s(f"Φάκελος MP3: {folder}")
-        try:
-            names = os.listdir(folder)
-        except OSError as exc:
-            messagebox.showerror("Σφάλμα", f"Δεν ήταν δυνατή η ανάγνωση φακέλου MP3:\n{exc}")
-            return
-        mp3_files = [n for n in names if n.lower().endswith(".mp3")]
-        if not mp3_files:
-            messagebox.showinfo("Πληροφορία", "Δεν βρέθηκαν αρχεία MP3 σε αυτόν τον φάκελο.")
-            return
-        mp3_files.sort()
-        if len(mp3_files) > 999:
-            messagebox.showerror(
-                "Πάρα πολλά αρχεία",
-                "Υποστηρίζονται μέχρι 999 αρχεία MP3 (BOOKCODE-001 έως BOOKCODE-999).",
+        # Use same active MP3 folder resolution as validation and Έλεγχος MP3
+        folder = self.get_active_mp3_folder()
+        if not folder or not os.path.isdir(folder):
+            initial = self.fold.get().strip()
+            folder = filedialog.askdirectory(
+                title="Επιλογή φακέλου MP3 για μετονομασία", initialdir=initial or None
             )
+            if not folder:
+                return
+            self.dv["mp3_fold"].set(folder)
+        self._s(f"Φάκελος MP3: {folder}")
+        total_mp3 = len(self.get_current_mp3_files())
+        mp3_files = get_source_mp3_files(folder, code.strip())
+        source_count = len(mp3_files)
+        generated_count = total_mp3 - source_count
+        if not mp3_files:
+            msg = (
+                "No source MP3 files found. This folder contains only already-generated internal MP3 files.\n\n"
+                "Δεν βρέθηκαν αρχεία MP3 πηγής. Ο φάκελος περιέχει μόνο ήδη-παραγωγικά εσωτερικά αρχεία.\n\n"
+                f"Φάκελος MP3: {folder}\n"
+                f"Σύνολο αρχείων MP3: {total_mp3}\n"
+                f"Πηγές (source): {source_count}\n"
+                f"Εσωτερικά (generated, αγνοούνται): {generated_count}"
+            )
+            messagebox.showinfo("Πληροφορία", msg)
             return
+        # No 999 limit; derive numbering from actual file count (unlimited MP3 files)
+        num_width = max(3, len(str(len(mp3_files))))
         mappings = []
         already_ok = 0
         conflicts = []
         code_clean = code.strip()
         for idx, name in enumerate(mp3_files, start=1):
-            new_base = f"{code_clean}-{idx:03d}.mp3"
+            new_base = f"{code_clean}-{idx:0{num_width}d}.mp3"
             old_path = os.path.join(folder, name)
             new_path = os.path.join(folder, new_base)
             if name.lower() == new_base.lower():
@@ -1008,7 +1199,11 @@ class App:
                 errors += 1
         skipped = already_ok + len(conflicts)
         summary = (
-            f"Σύνολο αρχείων MP3: {len(mp3_files)}\n"
+            f"Φάκελος MP3: {folder}\n"
+            f"Σύνολο αρχείων MP3 στον φάκελο: {total_mp3}\n"
+            f"Πηγές (source): {source_count}\n"
+            f"Εσωτερικά (generated, αγνοούνται): {generated_count}\n\n"
+            f"Επεξεργασία πηγών: {len(mp3_files)}\n"
             f"Επεξεργάστηκαν ({'αντιγράφηκαν' if mode=='copy' else 'μετονομάστηκαν'}): {processed}\n"
             f"Παραλείφθηκαν (ήδη σωστά / συγκρούσεις): {skipped}\n"
             f"Σφάλματα: {errors}"
@@ -1071,7 +1266,7 @@ class App:
             "Έτοιμο!",
             f"✅ Βάση δεδομένων:\n{path}\n\nΕγγραφές: {count}",
         )
-        mp3_folder = (self.dv["mp3_fold"].get() or "").strip() or fo
+        mp3_folder = self.get_active_mp3_folder()
         ok_mp3, missing = validate_missing_mp3(mp3_folder, self.mrks, code)
         if not ok_mp3 and missing:
             self._s("⚠️ Λείπουν αρχεία MP3")
