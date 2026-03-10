@@ -101,6 +101,20 @@ def _clean_preview_for_title(preview: str) -> str:
     return s[:200] if len(s) > 200 else s
 
 
+def clean_original_mp3_title(original_name: str) -> str:
+    """
+    Clean original MP3 filename to use as hymn title:
+    - remove extension
+    - strip leading track numbers / prefixes (e.g. '001 ', '01-', '1. ').
+    """
+    if not original_name:
+        return ""
+    name = os.path.splitext(os.path.basename(original_name))[0].strip()
+    # remove leading digits + optional separator
+    name = re.sub(r"^\s*\d+\s*[-._)]?\s*", "", name).strip()
+    return name
+
+
 def _enable_clipboard_paste(root, widget):
     """Enable Ctrl+V, Shift+Insert, and right-click paste for Entry or Text widgets.
     Works with Greek and other keyboard layouts (keycode-based fallback).
@@ -163,6 +177,9 @@ class App:
         self.status = tk.StringVar(value=f"Καλωσήρθατε στο {APP_TITLE} {VERSION}")
         self.mrks: List[Marker] = []
         self.assignments: List[dict] = []  # one per marker: song_title, echos, section (StringVars)
+        # Mapping from internal MP3 filename (e.g. AN01-001.mp3) to original source name
+        # e.g. "AN01-001.mp3" -> "001 Κύριε Ἐκέκραξα.mp3"
+        self.mp3_original_name_by_new_file: dict[str, str] = {}
 
         self.dv = {
             "code": tk.StringVar(value="BOOK"),
@@ -583,10 +600,23 @@ class App:
         ordered = sorted(self.mrks, key=lambda m: (m.page, m.y))
         for i, m in enumerate(ordered):
             preview = extract_preview_text(pdf, m) if pdf and os.path.isfile(pdf) else ""
-            cleaned_title = _clean_preview_for_title(preview)
-            current_title = (self.assignments[i]["song_title"].get() or "").strip()
-            if not current_title and cleaned_title:
-                self.assignments[i]["song_title"].set(cleaned_title)
+            cleaned_preview = _clean_preview_for_title(preview)
+            # Determine final title with priority:
+            # 1. Existing manual title
+            # 2. Original MP3 filename from rename mapping
+            # 3. Cleaned preview text from PDF
+            existing_title = (self.assignments[i]["song_title"].get() or "").strip()
+            mp3_file_name = get_mp3_file(code, i + 1)
+            final_title = existing_title
+            if not final_title:
+                key = mp3_file_name.strip()
+                if key and key in self.mp3_original_name_by_new_file:
+                    original_name = self.mp3_original_name_by_new_file[key]
+                    final_title = clean_original_mp3_title(original_name)
+                elif cleaned_preview:
+                    final_title = cleaned_preview.strip()
+            if not existing_title and final_title:
+                self.assignments[i]["song_title"].set(final_title)
             row = tk.Frame(self.assign_inner, bg=GREY_LIGHT, relief="flat", bd=0, cursor="hand2")
             row.pack(fill="x", pady=1)
             row.bind("<Button-1>", lambda e, idx=i: self._on_preview_row(idx))
@@ -615,7 +645,7 @@ class App:
             _enable_clipboard_paste(self.root, e_section)
             mp3_code = get_mp3_code(code, i + 1)
             tk.Label(row, text=mp3_code, width=10, bg=GREY_LIGHT, fg=TEXT_DARK, font=("Courier", 9)).pack(side="left", padx=2, pady=2)
-            tk.Label(row, text=get_mp3_file(code, i + 1), width=14, bg=GREY_LIGHT, fg=TEXT_DARK, font=("Courier", 9)).pack(side="left", padx=2, pady=2)
+            tk.Label(row, text=mp3_file_name, width=14, bg=GREY_LIGHT, fg=TEXT_DARK, font=("Courier", 9)).pack(side="left", padx=2, pady=2)
             url = get_mp3_url(bunny, code, i + 1)
             url_short = (url[:45] + "…") if len(url) > 48 else url
             url_lbl = tk.Label(row, text=url_short, width=48, bg=GREY_LIGHT, fg=TEXT_DARK, font=("Courier", 8), anchor="w")
@@ -925,6 +955,8 @@ class App:
                 conflicts.append((name, new_base))
                 continue
             mappings.append((old_path, new_path, name, new_base))
+            # remember original name for this internal filename
+            self.mp3_original_name_by_new_file[new_base] = name
         if not mappings and not conflicts:
             messagebox.showinfo(
                 "Μετονομασία MP3",
