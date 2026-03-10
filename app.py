@@ -2,6 +2,7 @@
 """ToFanari — Main GUI application."""
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -87,6 +88,17 @@ def _btn(
     if width:
         b.config(width=width)
     return b
+
+
+def _clean_preview_for_title(preview: str) -> str:
+    """Clean extracted preview text for use as hymn title: remove bullets/symbols, normalize spaces."""
+    if not preview or not isinstance(preview, str):
+        return ""
+    s = preview.strip()
+    for ch in "\u25a0\u25aa\u2022\u00b7\u2023\u2043\u2219\u2024\u2027\u2022\u2024":
+        s = s.replace(ch, " ")
+    s = re.sub(r"\s+", " ", s).strip()
+    return s[:200] if len(s) > 200 else s
 
 
 def _enable_clipboard_paste(root, widget):
@@ -571,6 +583,10 @@ class App:
         ordered = sorted(self.mrks, key=lambda m: (m.page, m.y))
         for i, m in enumerate(ordered):
             preview = extract_preview_text(pdf, m) if pdf and os.path.isfile(pdf) else ""
+            cleaned_title = _clean_preview_for_title(preview)
+            current_title = (self.assignments[i]["song_title"].get() or "").strip()
+            if not current_title and cleaned_title:
+                self.assignments[i]["song_title"].set(cleaned_title)
             row = tk.Frame(self.assign_inner, bg=GREY_LIGHT, relief="flat", bd=0, cursor="hand2")
             row.pack(fill="x", pady=1)
             row.bind("<Button-1>", lambda e, idx=i: self._on_preview_row(idx))
