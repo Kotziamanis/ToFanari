@@ -1,16 +1,36 @@
+
 # -*- coding: utf-8 -*-
 """ToFanari — Preflight validation for database and source structure (platform-independent)."""
 
 import os
+import re
 from typing import Any, Dict, List
 
 # Row dict: song_title, mp3_code, mp3_file, url, page, y, preview_text (optional)
 
+# Extract leading 3-digit number from source MP3 filename: "001 Title.mp3" -> "001"
+_SOURCE_MP3_NUMBER_RE = re.compile(r"^(\d{3})\s")
 
-def validate_database(rows: List[Dict[str, Any]], mp3_folder: str) -> Dict[str, Any]:
+
+def _source_mp3_number_to_filename(mp3_files: List[str]) -> Dict[str, str]:
+    r"""Build mapping from 3-digit source number (e.g. '001') to filename. Uses regex r'^(\d{3})\s'."""
+    num_to_file: Dict[str, str] = {}
+    for f in mp3_files or []:
+        m = _SOURCE_MP3_NUMBER_RE.match(f)
+        if m:
+            num_to_file[m.group(1)] = f
+    return num_to_file
+
+
+def validate_database(
+    rows: List[Dict[str, Any]],
+    mp3_folder: str,
+    source_mp3_files: List[str] = None,
+) -> Dict[str, Any]:
     """
-    Validate database integrity: required fields, MP3 File == MP3 Code + ".mp3", file existence, duplicates.
-    Returns: { "ok": bool, "rows_checked": int, "errors": [...], "warnings": [...], "info": [...] }
+    Validate database integrity: required fields, source MP3 number matching, duplicates.
+    Uses same source MP3 scan as Tab 4. Row i (1-based) must have a source file with number 001, 002, ...
+    Returns: { "ok": bool, "rows_checked": int, "errors": [...], "warnings": [...], "info": [] }
     """
     errors: List[str] = []
     warnings: List[str] = []
@@ -24,6 +44,8 @@ def validate_database(rows: List[Dict[str, Any]], mp3_folder: str) -> Dict[str, 
             "warnings": [],
             "info": [],
         }
+
+    source_num_to_file = _source_mp3_number_to_filename(source_mp3_files) if source_mp3_files else {}
 
     seen_titles: Dict[str, List[int]] = {}
     seen_codes: Dict[str, List[int]] = {}
@@ -44,23 +66,21 @@ def validate_database(rows: List[Dict[str, Any]], mp3_folder: str) -> Dict[str, 
             errors.append(f"Row {row_num}: missing Song Title.")
         if not mp3_code:
             errors.append(f"Row {row_num}: missing MP3 Code.")
-        if not mp3_file:
-            errors.append(f"Row {row_num}: missing MP3 File.")
         if page is None and row.get("page") is None:
             pass  # optional
         elif page is not None and (not isinstance(page, (int, float)) or page < 1):
             errors.append(f"Row {row_num}: invalid or missing page/marker reference.")
 
-        # 2. MP3 File must equal MP3 Code + ".mp3" (Song Title is human-readable, not compared to file)
-        if mp3_code:
-            expected_file = f"{mp3_code}.mp3"
-            if mp3_file != expected_file:
-                errors.append(
-                    f"Row {row_num}: MP3 File does not match MP3 Code (expected {expected_file})."
-                )
+        # 2. Source MP3 number matching: row 1 -> 001, row 2 -> 002, ... (same logic as Tab 4)
+        if source_mp3_files is not None:
+            num_str = f"{row_num:03d}"
+            if num_str not in source_num_to_file:
+                errors.append(f"Row {row_num} has no matching source MP3 file (missing source MP3 number: {num_str}).")
+        elif not mp3_file:
+            errors.append(f"Row {row_num}: missing MP3 File.")
 
-        # 3. File existence
-        if mp3_file and mp3_folder:
+        # 3. File existence only when not using source list (legacy path): check mp3_file in folder
+        if not source_mp3_files and mp3_file and mp3_folder:
             path = os.path.join(mp3_folder, mp3_file)
             if not os.path.isfile(path):
                 errors.append(f"Row {row_num}: file not found in MP3 folder: {mp3_file}")
@@ -122,7 +142,8 @@ def validate_source_structure(
     mp3_file_count: int,
 ) -> Dict[str, Any]:
     """
-    Validate source structure: preview text, duplicates, ordering, row vs file count.
+    Validate source structure: page/marker ordering, row vs MP3 count, broken rows.
+    No preview-length or short-preview warnings (preview text is optional).
     Returns: { "ok": bool, "errors": [...], "warnings": [...], "info": [...] }
     """
     errors: List[str] = []
@@ -133,23 +154,7 @@ def validate_source_structure(
     if n == 0:
         return {"ok": True, "errors": [], "warnings": [], "info": ["No rows to validate."]}
 
-    # 1. Empty or nearly empty preview
-    for i, row in enumerate(rows):
-        preview = (row.get("preview_text") or "").strip()
-        if len(preview) < 2 and (row.get("song_title") or row.get("mp3_file")):
-            warnings.append(f"Row {i + 1}: empty or very short preview/source text.")
-        elif len(preview) > 0 and len(preview) < 10:
-            warnings.append(f"Row {i + 1}: suspiciously short preview text.")
-
-    # 2. Duplicate or nearly identical preview text
-    prev_preview = None
-    for i, row in enumerate(rows):
-        preview = (row.get("preview_text") or "").strip()
-        if preview and prev_preview and preview == prev_preview:
-            warnings.append(f"Rows {i + 1} and {i + 2}: identical preview text.")
-        prev_preview = preview
-
-    # 3. Page/marker ordering
+    # 1. Page/marker ordering
     prev_page, prev_y = None, None
     for i, row in enumerate(rows):
         page, y = row.get("page"), row.get("y")
@@ -162,15 +167,19 @@ def validate_source_structure(
         if y is not None:
             prev_y = y
 
-    # 4. Row count vs MP3 file count
+    # 2. Hymn rows vs source MP3 files (NOT PDF page count)
     if mp3_file_count is not None and mp3_file_count != n:
-        warnings.append(
-            f"Mismatch: {n} hymn rows vs {mp3_file_count} MP3 files in folder. "
-            "Matched by row order."
-        )
-    info.append(f"Hymn rows: {n}, MP3 files in folder: {mp3_file_count if mp3_file_count is not None else 'N/A'}.")
+        delta = mp3_file_count - n
+        warnings.append(f"Hymn row count: {n}")
+        warnings.append(f"Source MP3 files: {mp3_file_count}")
+        if delta > 0:
+            warnings.append(f"More MP3 files than hymn rows: {delta}")
+        else:
+            warnings.append(f"Fewer MP3 files than hymn rows: {abs(delta)} missing")
+    info.append(f"Hymn row count: {n}")
+    info.append(f"Source MP3 files: {mp3_file_count if mp3_file_count is not None else 'N/A'}")
 
-    # 5. Broken/incomplete row
+    # 3. Broken/incomplete row (no title and no file)
     for i, row in enumerate(rows):
         has_title = bool((row.get("song_title") or "").strip())
         has_file = bool((row.get("mp3_file") or "").strip())
@@ -186,8 +195,6 @@ def validate_source_structure(
 
 
 # Hymn boundary validation thresholds (heuristic)
-PREVIEW_SHORT_CHARS = 15   # preview shorter than this → unusually short
-PREVIEW_LONG_CHARS = 500   # preview longer than this → possibly merged hymns
 BEGINNING_MATCH_CHARS = 35 # adjacent rows matching up to this many chars → duplicate beginning
 OVERLAP_MIN_CHARS = 25     # min overlap length to consider boundary overlap
 
@@ -195,7 +202,7 @@ OVERLAP_MIN_CHARS = 25     # min overlap length to consider boundary overlap
 def validate_hymn_boundaries(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Heuristic validation of hymn boundaries (PDF splitting/parsing).
-    Detects unusually short/long previews, duplicate beginnings, boundary overlap, repeated page/span.
+    Detects duplicate beginnings, boundary overlap, repeated page/span. No preview-length checks.
     Returns: { "errors": [...], "warnings": [...], "info": [...] }
     """
     errors: List[str] = []
@@ -210,21 +217,7 @@ def validate_hymn_boundaries(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     pages = [row.get("page") for row in rows]
     ys = [row.get("y") for row in rows]
 
-    # 1. Unusually short preview/source text
-    for i, txt in enumerate(previews):
-        if len(txt) > 0 and len(txt) < PREVIEW_SHORT_CHARS:
-            warnings.append(
-                f"Row {i + 1}: unusually short preview ({len(txt)} chars) — possible boundary/split issue."
-            )
-
-    # 2. Unusually long preview/source text (possible merged hymns)
-    for i, txt in enumerate(previews):
-        if len(txt) > PREVIEW_LONG_CHARS:
-            warnings.append(
-                f"Row {i + 1}: unusually long preview ({len(txt)} chars) — may contain merged hymns."
-            )
-
-    # 3. Adjacent duplicate beginnings (first N chars identical or very similar)
+    # 1. Adjacent duplicate beginnings (first N chars identical or very similar)
     for i in range(n - 1):
         a, b = previews[i], previews[i + 1]
         if not a or not b:
@@ -265,7 +258,7 @@ def validate_hymn_boundaries(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
                 f"Rows {i + 1} and {i + 2}: boundary overlap suspicion — preview text overlaps."
             )
 
-    # 5. Repeated page/marker span (adjacent rows same page and same or very close y)
+    # 4. Repeated page/marker span (adjacent rows same page and same or very close y)
     for i in range(n - 1):
         p1, p2 = pages[i], pages[i + 1]
         y1, y2 = ys[i], ys[i + 1]
@@ -286,15 +279,79 @@ def validate_hymn_boundaries(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
                 except (TypeError, ValueError):
                     pass
 
-    # Only hard error: row with no content at all but has slot (already in other validators; optional here)
-    for i, row in enumerate(rows):
-        txt = previews[i]
-        has_identity = (row.get("song_title") or "").strip() or (row.get("mp3_file") or "").strip()
-        if has_identity and len(txt) == 0 and (pages[i] is not None or ys[i] is not None):
-            # Could add error; user said "do not block unless clearly broken". Empty preview with identity is warning.
-            pass
+    info.append(f"Boundary checks: begin_match={BEGINNING_MATCH_CHARS}, overlap>={OVERLAP_MIN_CHARS}.")
 
-    info.append(f"Boundary checks: short<{PREVIEW_SHORT_CHARS}, long>{PREVIEW_LONG_CHARS}, begin_match={BEGINNING_MATCH_CHARS}, overlap>={OVERLAP_MIN_CHARS}.")
+    return {"errors": errors, "warnings": warnings, "info": info}
+
+
+# Regex to extract leading number from source MP3 filename: "001 Title.mp3" -> 1, "010 Another.mp3" -> 10
+_MP3_LEADING_NUMBER_RE = re.compile(r"^(\d+)")
+# Pattern "NNN Title.mp3": digits, space, title, .mp3
+_MP3_VALID_PATTERN_RE = re.compile(r"^\d+\s+.+\.mp3$", re.IGNORECASE)
+
+
+def validate_mp3_filename_pattern(mp3_files: List[str]) -> Dict[str, Any]:
+    """
+    Check filenames against pattern NNN Title.mp3.
+    Returns: { "errors": [], "warnings": [...], "info": [] }
+    """
+    errors: List[str] = []
+    warnings: List[str] = []
+    invalid: List[str] = []
+    for f in mp3_files:
+        if not _MP3_VALID_PATTERN_RE.match(f):
+            invalid.append(f)
+    for fn in invalid:
+        warnings.append(f"Invalid filename (expected NNN Title.mp3): {fn}")
+    return {"errors": errors, "warnings": warnings, "info": []}
+
+
+def validate_mp3_numbering(source_mp3_files: List[str]) -> Dict[str, Any]:
+    r"""
+    Validate MP3 numbering from source filenames.
+    Uses regex r'^(\d+)' to extract leading number.
+    Reports: missing numbers, duplicate numbers, non-numbered source files.
+    Returns: { "errors": [], "warnings": [...], "info": [] }
+    """
+    errors: List[str] = []
+    warnings: List[str] = []
+    info: List[str] = []
+
+    if not source_mp3_files:
+        return {"errors": errors, "warnings": warnings, "info": info}
+
+    # A. Non-numbered source files
+    numbered: List[tuple[int, str]] = []  # (number, filename)
+    for f in source_mp3_files:
+        m = _MP3_LEADING_NUMBER_RE.match(f)
+        if m:
+            try:
+                numbered.append((int(m.group(1)), f))
+            except ValueError:
+                warnings.append(f"Source MP3 without leading number: {f}")
+        else:
+            warnings.append(f"Source MP3 without leading number: {f}")
+
+    if not numbered:
+        return {"errors": errors, "warnings": warnings, "info": info}
+
+    # B. Duplicate numbers
+    num_to_files: Dict[int, List[str]] = {}
+    for n, fn in numbered:
+        num_to_files.setdefault(n, []).append(fn)
+    for n, fns in sorted(num_to_files.items()):
+        if len(fns) > 1:
+            width = max(3, len(str(max(num_to_files))))
+            warnings.append(f"Duplicate MP3 number: {n:0{width}d}")
+
+    # C. Missing numbers
+    numbers_sorted = sorted(num_to_files.keys())
+    min_n, max_n = numbers_sorted[0], numbers_sorted[-1]
+    present = set(numbers_sorted)
+    width = max(3, len(str(max_n)))
+    for n in range(min_n, max_n + 1):
+        if n not in present:
+            warnings.append(f"Missing MP3 number: {n:0{width}d}")
 
     return {"errors": errors, "warnings": warnings, "info": info}
 
@@ -305,8 +362,8 @@ def validate_row_mp3_count_consistency(
     mp3_file_count: int,
 ) -> Dict[str, Any]:
     """
-    Compare hymn row count with MP3 file count.
-    Uses mp3_file_count passed from caller (from get_current_mp3_files) — no listdir here.
+    Compare hymn row count with source MP3 file count.
+    Uses mp3_file_count passed from caller (from Tab 4 MP3 scan) — no listdir here.
     Returns: { "errors": [...], "warnings": [...], "info": [...] }
     """
     errors: List[str] = []
@@ -324,19 +381,14 @@ def validate_row_mp3_count_consistency(
         info.append("No hymn rows; row/MP3 count check skipped.")
         return {"errors": errors, "warnings": warnings, "info": info}
 
-    # Hymn rows vs MP3 files
+    # Hymn rows vs source MP3 files (NOT PDF page count)
     if hymn_row_count != mp3_file_count:
-        warnings.append(
-            f"Hymn row count ({hymn_row_count}) does not match MP3 file count ({mp3_file_count})."
-        )
-    if hymn_row_count > mp3_file_count:
-        warnings.append(
-            f"More hymn rows than MP3 files — {hymn_row_count - mp3_file_count} hymn(s) may be missing audio."
-        )
-    if mp3_file_count > hymn_row_count:
-        warnings.append(
-            f"More MP3 files than hymn rows — {mp3_file_count - hymn_row_count} extra MP3 file(s) in folder."
-        )
+        warnings.append(f"Hymn row count: {hymn_row_count}")
+        warnings.append(f"Source MP3 files: {mp3_file_count}")
+        if mp3_file_count > hymn_row_count:
+            warnings.append(f"More MP3 files than hymn rows: {mp3_file_count - hymn_row_count}")
+        else:
+            warnings.append(f"Fewer MP3 files than hymn rows: {hymn_row_count - mp3_file_count} missing")
 
     # Matched rows vs hymn rows
     if matched_count < hymn_row_count:
@@ -344,57 +396,48 @@ def validate_row_mp3_count_consistency(
             f"Only {matched_count} of {hymn_row_count} hymn rows have MP3 assignments."
         )
 
-    info.append(
-        f"Row/MP3 consistency: {hymn_row_count} hymn rows, {mp3_file_count} MP3 files, {matched_count} rows with MP3 File."
-    )
+    info.append(f"Hymn row count: {hymn_row_count}")
+    info.append(f"Source MP3 files: {mp3_file_count}")
+    info.append(f"Rows with MP3 File field populated: {matched_count}")
 
     return {"errors": errors, "warnings": warnings, "info": info}
 
 
 def run_full_validation(
     rows: List[Dict[str, Any]],
-    mp3_folder: str,
-    mp3_file_count: int,
+    mp3_folder: str = None,
+    mp3_files: List[str] = None,
+    mp3_count: int = None,
     pdf_path: str = None,
-    mp3_files_list: List[str] = None,
-    total_mp3: int = None,
-    source_mp3_count: int = None,
-    generated_mp3_count: int = None,
 ) -> Dict[str, Any]:
     """
-    Run all validation layers (database, source structure, hymn boundaries, row/MP3 count) and return combined result.
-    mp3_file_count = source MP3 files (used for row comparison). total/source/generated shown in report when provided.
+    Run all validation layers (database, source structure, hymn boundaries, row/MP3 count).
+    Uses single MP3 folder (selected in Tab 4); mp3_files used for numbering/pattern checks.
     """
-    # Clear all aggregates before running checks (no accumulation across runs)
     all_errors: List[str] = []
     all_warnings: List[str] = []
     all_info: List[str] = []
 
-    # Validation context — resolved folder and counts; show in report
+    # INFO: MP3 folder
     validation_info: List[str] = []
-    validation_info.append(f"PDF path used: {pdf_path if pdf_path else 'N/A'}")
-    validation_info.append(f"MP3 folder used: {mp3_folder}")
-    validation_info.append(f"MP3 folder exists: {'yes' if (mp3_folder and os.path.isdir(mp3_folder)) else 'no'}")
-    if total_mp3 is not None and source_mp3_count is not None and generated_mp3_count is not None:
-        validation_info.append(f"Total MP3 files in folder: {total_mp3}")
-        validation_info.append(f"Source MP3 files: {source_mp3_count}")
-        validation_info.append(f"Generated internal MP3 files ignored: {generated_mp3_count}")
-    else:
-        validation_info.append(f"MP3 files found in active folder (source): {mp3_file_count}")
-    if mp3_files_list is not None:
-        if mp3_files_list:
-            validation_info.append("First 10 source MP3 files: " + ", ".join(mp3_files_list[:10]))
-        else:
-            validation_info.append("First 10 source MP3 files: (none)")
+    validation_info.append(f"MP3 folder: {mp3_folder if mp3_folder else 'N/A'}")
+    validation_info.append(f"MP3 files: {mp3_count if mp3_count is not None else 0}")
+    if pdf_path:
+        validation_info.append(f"PDF path: {pdf_path}")
 
-    db = validate_database(rows, mp3_folder)
-    src = validate_source_structure(rows, mp3_file_count)
+    if not mp3_folder or not mp3_folder.strip():
+        all_warnings.append("No MP3 folder selected (Tab 4).")
+
+    db = validate_database(rows, mp3_folder or "", source_mp3_files=mp3_files)
+    src = validate_source_structure(rows, mp3_count)
     bnd = validate_hymn_boundaries(rows)
-    cnt = validate_row_mp3_count_consistency(rows, mp3_folder, mp3_file_count)
+    cnt = validate_row_mp3_count_consistency(rows, mp3_folder or "", mp3_count or 0)
+    gaps = validate_mp3_numbering(mp3_files or [])
+    pattern_res = validate_mp3_filename_pattern(mp3_files or [])
 
-    all_errors = (db.get("errors") or []) + (src.get("errors") or []) + (bnd.get("errors") or []) + (cnt.get("errors") or [])
-    all_warnings = (db.get("warnings") or []) + (src.get("warnings") or []) + (bnd.get("warnings") or []) + (cnt.get("warnings") or [])
-    all_info = validation_info + (db.get("info") or []) + (src.get("info") or []) + (bnd.get("info") or []) + (cnt.get("info") or [])
+    all_errors = (db.get("errors") or []) + (src.get("errors") or []) + (bnd.get("errors") or []) + (cnt.get("errors") or []) + (gaps.get("errors") or []) + (pattern_res.get("errors") or [])
+    all_warnings = (db.get("warnings") or []) + (src.get("warnings") or []) + (bnd.get("warnings") or []) + (cnt.get("warnings") or []) + (gaps.get("warnings") or []) + (pattern_res.get("warnings") or [])
+    all_info = validation_info + (db.get("info") or []) + (src.get("info") or []) + (bnd.get("info") or []) + (cnt.get("info") or []) + (gaps.get("info") or []) + (pattern_res.get("info") or [])
     n = db.get("rows_checked", len(rows))
 
     ok = len(all_errors) == 0
@@ -410,12 +453,12 @@ def run_full_validation(
         status_kind = "errors"
         status_text = "DATABASE NOT READY — FIX ERRORS FIRST"
 
-    mp3_count_str = str(mp3_file_count) if mp3_file_count is not None else "N/A"
     report_lines = [
         "DATABASE VALIDATION REPORT",
         "",
         f"Rows checked: {n}",
-        f"Source MP3 files: {mp3_count_str}",
+        f"MP3 folder: {mp3_folder if mp3_folder else 'N/A'}",
+        f"MP3 files: {mp3_count if mp3_count is not None else 'N/A'}",
         f"Matched rows: {n}",
         "",
         f"Errors: {len(all_errors)}",

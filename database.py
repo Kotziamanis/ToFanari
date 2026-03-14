@@ -119,11 +119,14 @@ def build_database_xlsx(
     bunny_base_url: str = DEFAULT_BUNNY_BASE_URL,
     use_book_subfolder: bool = USE_BOOK_SUBFOLDER,
     assignments: List[dict] = None,
+    source_mp3_files: List[str] = None,
 ) -> Tuple[str, int]:
     """
     Create production-ready database.xlsx with columns:
     #, Page, Y, Song Title, Echos, Section, MP3 Code, MP3 File, Bunny URL, Status, Notes.
     assignments: list of dicts with song_title, echos, section (optional status, notes). Uses "" and "TODO" if missing.
+    source_mp3_files: list of source MP3 filenames (e.g. 001 Title.mp3) from the same scan as MP3 Check.
+      Row i uses source_mp3_files[i] for MP3 File column. MP3 Code remains BOOKCODE-NNN.
     """
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -145,7 +148,10 @@ def build_database_xlsx(
 
     for i, m in enumerate(ordered):
         mp3_code = _mp3_basename(code_clean, i + 1)
-        mp3_file = mp3_code + ".mp3"
+        if source_mp3_files and i < len(source_mp3_files):
+            mp3_file = source_mp3_files[i]
+        else:
+            mp3_file = ""
         mp3_url = _build_mp3_url(base, code_clean, i + 1, use_book_subfolder)
         a = (assignments or [{}])[i] if assignments and i < len(assignments) else {}
         song_title = (a.get("song_title") or "").strip() if isinstance(a.get("song_title"), str) else ""
@@ -180,13 +186,17 @@ def preview_lines(
     code: str = DEFAULT_BOOK_CODE,
     bunny_base_url: str = DEFAULT_BUNNY_BASE_URL,
     max_lines: int = 40,
+    source_mp3_files: List[str] = None,
 ) -> List[str]:
-    """Text preview of database rows for the UI."""
+    """Text preview of database rows for the UI. Uses source MP3 filenames when provided."""
     ordered = _all_markers_sorted(markers)
     base = bunny_base_url.rstrip("/")
-    lines = [f"{'ID':<6}{'Page':<6}{'MP3_File':<18}MP3_URL", "─" * 72]
+    lines = [f"{'ID':<6}{'Page':<6}{'MP3_File':<24}MP3_URL", "─" * 72]
     for i, m in enumerate(ordered[: max_lines - 2]):
-        mp3_file = _mp3_basename(code, i + 1) + ".mp3"
+        if source_mp3_files and i < len(source_mp3_files):
+            mp3_file = source_mp3_files[i]
+        else:
+            mp3_file = _mp3_basename(code, i + 1) + ".mp3"
         url = _build_mp3_url(base, code, i + 1)
-        lines.append(f"{i + 1:03d}   {m.page:<6}{mp3_file:<18}{url}")
+        lines.append(f"{i + 1:03d}   {m.page:<6}{mp3_file:<24}{url}")
     return lines
