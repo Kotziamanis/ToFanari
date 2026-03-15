@@ -1,0 +1,11 @@
+@echo off
+cd /d %~dp0
+
+echo Saving project...
+
+git add .
+git commit -m "update project"
+git push
+
+echo Done!
+pause
