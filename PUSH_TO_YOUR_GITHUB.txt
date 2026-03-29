@@ -1,0 +1,18 @@
+Your project is already linked to:
+  https://github.com/Kotziamanis/ToFanari.git
+
+In Terminal:
+  cd ~/tofanari-pdf-marker
+  git push -u origin main --force
+
+If push fails mentioning "workflow" or "Personal Access Token":
+  1. Open https://github.com/settings/tokens
+  2. Generate new token (classic)
+  3. Enable: repo  AND  workflow
+  4. Push again; when asked for password, paste the NEW token
+
+GitHub Desktop: sign in and Push — it usually has permission to update Actions files.
+
+After a successful push:
+  • Repo: https://github.com/Kotziamanis/ToFanari
+  • Windows EXE: Actions → latest green run → Artifacts → PDFMarkerTool-Windows-x64
