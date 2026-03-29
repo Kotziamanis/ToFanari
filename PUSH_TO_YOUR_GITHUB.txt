@@ -16,3 +16,5 @@ GitHub Desktop: sign in and Push — it usually has permission to update Actions
 After a successful push:
   • Repo: https://github.com/Kotziamanis/ToFanari
   • Windows EXE: Actions → latest green run → Artifacts → PDFMarkerTool-Windows-x64
+
+On your PC (no Mac needed): open WORK_ON_PC.md and README.md after you clone the repo.
