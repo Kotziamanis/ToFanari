@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-03-21T06:19:22.723542+00:00",
+  "source_root": "C:\\Users\\User\\ToFanari_v4\\source_books",
+  "chapters": [
+    {
+      "book_slug": "example_book",
+      "chapter_slug": "chapter_01",
+      "chapter_path": "C:\\Users\\User\\ToFanari_v4\\source_books\\example_book\\chapter_01",
+      "is_production_book": false,
+      "html_status": "OK",
+      "audio_status": "OK",
+      "validation_status": "READY",
+      "upload_eligible_default": false,
+      "bunny_target_prefix": "books/example_book/chapter_01/",
+      "bunny_index_url": "https://fanari.b-cdn.net/books/example_book/chapter_01/index.html",
+      "issues": [],
+      "warnings": [],
+      "uploaded_url": null,
+      "upload_eligible_for_auto_select": false,
+      "selection_allowed": true
+    }
+  ],
+  "selected_for_upload": []
+}

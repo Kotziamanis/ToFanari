@@ -1,0 +1,23 @@
+================================================================================
+  PDF MARKER TOOL — DOWNLOAD ON PC (cheat sheet)
+  Fill in your names once, then keep this file on the PC desktop.
+================================================================================
+
+STEP 1 — Bookmark this address in your browser (replace YOUR_USER and YOUR_REPO):
+
+  https://github.com/YOUR_USER/YOUR_REPO/actions/workflows/build-pdf-marker-windows.yml
+
+STEP 2 — Each time you want the latest program:
+  • Open that bookmark
+  • Click the TOP line that has a GREEN checkmark
+  • Scroll down to "Artifacts"
+  • Click: PDFMarkerTool-Windows-x64  (downloads a ZIP)
+  • Open the ZIP → copy PDFMarkerTool.exe to Desktop → double-click to run
+
+Your PDF files stay on the PC. Only this .exe comes from GitHub.
+
+OPTIONAL — If you use Releases instead:
+  https://github.com/YOUR_USER/YOUR_REPO/releases
+  Download PDFMarkerTool.exe from the newest release.
+
+================================================================================

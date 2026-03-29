@@ -1,0 +1,46 @@
+{
+  "collections": [
+    {
+      "collection_code": "PARAKLITIKOI",
+      "title": "Παρακλητικοί",
+      "display_order": 1
+    }
+  ],
+  "books": [
+    {
+      "code": "MIKP",
+      "title": "Μικρός Παρακλητικός Κανών",
+      "collection": "PARAKLITIKOI",
+      "expected_chapters": 1,
+      "active": true,
+      "display_order": 1,
+      "book_slug": "MIKP",
+      "chapters": [
+        {
+          "order": 1,
+          "code": "MIKP_001",
+          "title": "",
+          "active": true
+        }
+      ]
+    },
+    {
+      "code": "MEPK",
+      "title": "Μέγας Παρακλητικός Κανών",
+      "collection": "PARAKLITIKOI",
+      "expected_chapters": 1,
+      "active": true,
+      "display_order": 2,
+      "book_slug": "MEPK",
+      "chapters": [
+        {
+          "order": 1,
+          "code": "MEPK_001",
+          "title": "",
+          "active": true
+        }
+      ]
+    }
+  ],
+  "schema_version": 1
+}

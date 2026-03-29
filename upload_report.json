@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-03-21T06:12:06.632017+00:00",
+  "pull_zone_base": "https://tofanari-library.b-cdn.net",
+  "storage_host": "storage.bunnycdn.com",
+  "storage_zone": "tofanari-books",
+  "path_prefix": "books",
+  "output_root": "C:\\Users\\User\\ToFanari_v4\\output_ready",
+  "dry_run": false,
+  "chapters": [
+    {
+      "book_slug": "example_book",
+      "chapter_slug": "chapter_01",
+      "files": [
+        {
+          "local_path": "C:\\Users\\User\\ToFanari_v4\\output_ready\\example_book\\chapter_01\\audio\\001 Example.mp3",
+          "remote_path": "books/example_book/chapter_01/audio/001 Example.mp3",
+          "public_url": "https://tofanari-library.b-cdn.net/books/example_book/chapter_01/audio/001%20Example.mp3",
+          "bytes": 0,
+          "status": "ok",
+          "detail": "HTTP 201"
+        },
+        {
+          "local_path": "C:\\Users\\User\\ToFanari_v4\\output_ready\\example_book\\chapter_01\\index.html",
+          "remote_path": "books/example_book/chapter_01/index.html",
+          "public_url": "https://tofanari-library.b-cdn.net/books/example_book/chapter_01/index.html",
+          "bytes": 451,
+          "status": "ok",
+          "detail": "HTTP 201"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_files": 2,
+    "failed": 0,
+    "ok": 2
+  }
+}

@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.Python
+venv/
+.venv/
+.env
+.DS_Store
+# Bunny credentials saved from GUI / CLI
+settings/bunny_credentials.json
+
+# PyInstaller / local release trees (large; copied from v4 for offline use)
+build/
+build_new/
+dist/
+dist_new/
+builds/
+release/

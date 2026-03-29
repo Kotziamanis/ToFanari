@@ -1,0 +1,6 @@
+PDF marker / Cursor workspace — use this for the standalone marker tool and collaboration here.
+Marker tool: python main.py   (PyMuPDF + Tk; Python 3.10+ recommended)
+Mac app: double-click build_pdf_marker_mac.command → dist/PDF Marker Tool.app. The build script must use Python with working Tk (python.org installer or Homebrew python-tk). Apple’s built-in python3 often crashes Tk with “macOS 26 … required”; if that happens, install Python from python.org, then rebuild. Quick run without .app: double-click Run_PDF_Marker_Tool.command (same Python rules).
+Note: This folder also contains a full ToFanari copy (app.py, etc.). For day-to-day “main” publishing, prefer ToFanari_v4 so settings and builds stay in one place. Use main.py here for marker-focused work.
+Data: ./settings/ and other subfolders belong only to this directory.
+Independent from ToFanari_v4 and tofanari-sync (no code links between them).

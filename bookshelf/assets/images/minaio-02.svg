@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="280" viewBox="0 0 200 280">
+  <rect width="200" height="280" fill="#5c4033"/>
+  <rect x="10" y="10" width="180" height="260" fill="#800000" stroke="#C8A85A" stroke-width="2"/>
+  <text x="100" y="130" font-family="Georgia, serif" font-size="16" fill="#C8A85A" text-anchor="middle">Minaio 02</text>
+</svg>

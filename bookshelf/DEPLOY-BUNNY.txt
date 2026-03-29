@@ -1,0 +1,53 @@
+ToFanari Bookshelf — Bunny.net deployment checklist
+==================================================
+
+1. FOLDER TO UPLOAD
+   Upload the entire "bookshelf" folder so that index.html is at the root
+   of your Storage Zone path (or Pull Zone root).
+
+2. REQUIRED FILES AND FOLDERS (keep structure)
+   - index.html
+   - categories/
+     - minaio.html
+     - triodio.html
+     - megali-evdomada.html
+     - pentikostario.html
+     - psaltika-vivlia.html
+     - psallontes-kat-empeirian.html
+   - assets/
+     - css/style.css
+     - js/books-data.js
+     - js/render-books.js
+     - images/placeholder.svg
+     - images/minaio-01.svg
+     - images/minaio-02.svg
+     - images/minaio-03.svg
+
+3. BUNNY.NET STEPS
+   [ ] Create or select a Storage Zone.
+   [ ] Upload the full bookshelf folder contents (index.html at root).
+   [ ] Create or link a Pull Zone to this path.
+   [ ] Set index.html as default document if your zone supports it (optional).
+   [ ] Test: open Pull Zone URL in browser — main page should load.
+   [ ] Test: click each category — category pages and images should load.
+
+4. URL EXPECTATIONS
+   - Main page: https://your-pullzone.b-cdn.net/  (or .../index.html)
+   - Category: https://your-pullzone.b-cdn.net/categories/minaio.html
+   All links are relative; no code changes needed for your CDN URL.
+
+5. FLIPBOOK OUTPUT (FlipBuilder)
+   Upload each exported flipbook under the same Pull Zone root, e.g.:
+     flipbooks/minaio-01/index.html
+   Book links in books-data.js use root-relative paths: /flipbooks/<slug>/index.html
+   (same hostname as the bookshelf). Re-run build_bookshelf.py after changing parameters.
+
+6. SUBPATH DEPLOYMENT
+   If the site lives under e.g. https://zone.b-cdn.net/library/ only, root-relative
+   /flipbooks/... resolves to https://zone.b-cdn.net/flipbooks/... (zone root), not
+   under /library/. Use a dedicated Pull Zone or hostname for the bookshelf, or
+   change FLIPBOOK_BASE_PATH in build_bookshelf.py to a relative or prefixed path.
+
+7. AFTER UPLOAD
+   Edit parameters + run build_bookshelf.py to regenerate books-data.js, or edit
+   books-data.js directly, then re-upload.

@@ -1,0 +1,4 @@
+# ToFanari — Python 3.10+ recommended (app uses PEP 604 union types, e.g. str | None)
+pymupdf>=1.23.0
+Pillow>=10.0.0
+openpyxl>=3.1.0

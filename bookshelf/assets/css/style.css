@@ -1,0 +1,211 @@
+/* ToFanari Bookshelf — Orthodox / Byzantine aesthetic */
+
+:root {
+    --dark-red: #800000;
+    --mid-red: #a04040;
+    --cream: #FDF6F0;
+    --gold: #C8A85A;
+    --text-dark: #2C1810;
+    --warm-brown: #5c4033;
+    --shelf-wood: #8B4513;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Georgia", "Times New Roman", serif;
+    background: linear-gradient(135deg, var(--cream) 0%, #f5ebe0 100%);
+    color: var(--text-dark);
+    margin: 0;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.site-header {
+    text-align: center;
+    padding: 2rem 1rem;
+    border-bottom: 2px solid var(--gold);
+}
+
+.site-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    color: var(--dark-red);
+}
+
+.tagline {
+    margin: 0.5rem 0 0;
+    font-size: 1rem;
+    color: var(--warm-brown);
+}
+
+/* Main categories grid */
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.category-card {
+    display: block;
+    padding: 1.5rem;
+    background: #fff;
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-dark);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.category-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(128, 0, 0, 0.15);
+    border-color: var(--dark-red);
+}
+
+.category-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.category-card h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--dark-red);
+}
+
+.category-card p {
+    margin: 0.3rem 0 0;
+    font-size: 0.9rem;
+    color: var(--warm-brown);
+}
+
+/* Category page */
+.category-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--dark-red);
+    color: white !important;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.back-link:hover {
+    background: var(--mid-red);
+}
+
+.page-title {
+    margin: 0;
+    font-size: 1.8rem;
+    color: var(--dark-red);
+}
+
+/* Bookshelf layout */
+.bookshelf {
+    background: linear-gradient(180deg, var(--shelf-wood) 0%, #6b3510 100%);
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+    gap: 1rem;
+}
+
+.book-card {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.book-cover {
+    aspect-ratio: 3/4;
+    background: linear-gradient(145deg, var(--dark-red) 0%, var(--warm-brown) 100%);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 2px 4px 8px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.book-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.book-cover .placeholder {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 0.35rem;
+}
+
+.book-card:hover .book-cover {
+    transform: scale(1.05);
+    box-shadow: 4px 8px 16px rgba(0,0,0,0.35);
+}
+
+.book-info {
+    margin-top: 0.35rem;
+}
+
+.book-title {
+    font-size: 0.88rem;
+    font-weight: bold;
+    margin: 0;
+    line-height: 1.25;
+    color: var(--text-dark);
+}
+
+.book-subtitle {
+    font-size: 0.72rem;
+    margin: 0.15rem 0 0;
+    line-height: 1.2;
+    color: var(--warm-brown);
+}
+
+.site-footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    margin-top: 3rem;
+    font-size: 0.9rem;
+    color: var(--warm-brown);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .categories-grid {
+        grid-template-columns: 1fr;
+    }
+    .books-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+}

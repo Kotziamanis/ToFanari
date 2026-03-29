@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <title>Example chapter</title>
+</head>
+<body>
+  <h1>Example chapter (Bunny prepare)</h1>
+  <p>Add real MP3 files under <code>audio/</code> next to this chapter folder.</p>
+  <!-- Marker format: data-audio="001" or src/href to audio/NNN*.mp3 -->
+  <span data-audio="001">Track 1</span>
+  <!-- Relative path from html/ to audio/ — rewritten on prepare -->
+  <audio controls src="../audio/001 Example.mp3"></audio>
+</body>
+</html>
