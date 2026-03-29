@@ -96,7 +96,7 @@ Press **Enter**.
 
   1. In the browser, open **https://github.com/settings/tokens**
   2. **Generate new token** → **Generate new token (classic)**
-  3. Give it a name, turn on **repo**, click **Generate token**
+  3. Give it a name, turn on **repo** and **workflow** (needed for `.github/workflows`), click **Generate token**
   4. **Copy the token** (you only see it once)
   5. In Terminal, for **Username** type your GitHub username; for **Password**, **paste the token**
 
