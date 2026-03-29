@@ -3,9 +3,9 @@
   Fill in your names once, then keep this file on the PC desktop.
 ================================================================================
 
-STEP 1 — Bookmark this address in your browser (replace YOUR_USER and YOUR_REPO):
+STEP 1 — Bookmark this address in your browser:
 
-  https://github.com/YOUR_USER/YOUR_REPO/actions/workflows/build-pdf-marker-windows.yml
+  https://github.com/Kotziamanis/ToFanari/actions/workflows/build-pdf-marker-windows.yml
 
 STEP 2 — Each time you want the latest program:
   • Open that bookmark
@@ -17,7 +17,7 @@ STEP 2 — Each time you want the latest program:
 Your PDF files stay on the PC. Only this .exe comes from GitHub.
 
 OPTIONAL — If you use Releases instead:
-  https://github.com/YOUR_USER/YOUR_REPO/releases
+  https://github.com/Kotziamanis/ToFanari/releases
   Download PDFMarkerTool.exe from the newest release.
 
 ================================================================================

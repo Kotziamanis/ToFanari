@@ -10,9 +10,9 @@ Your **PDFs stay on the PC**. You only download **one program** (`PDFMarkerTool.
 
 **2.** Open this page (bookmark it — see below):
 
-`https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/actions/workflows/build-pdf-marker-windows.yml`
+`https://github.com/Kotziamanis/ToFanari/actions/workflows/build-pdf-marker-windows.yml`
 
-Replace `YOUR_GITHUB_USERNAME` and `YOUR_REPO_NAME` with your real GitHub names **once**, then save the page as a **bookmark** or **Favourite** called *PDF Marker builds*.
+Save that page as a **bookmark** or **Favourite** called *PDF Marker builds* (after the project is pushed to GitHub).
 
 **3.** You see a list of runs. Click the **top** row that has a **green check** ✓ (successful build).
 
@@ -32,7 +32,7 @@ That’s the whole routine: **bookmark → green run → Artifacts → download 
 
 If you (or someone) published a version with a tag like `pdf-marker-v1.0.0`, you can skip Actions and use:
 
-`https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/releases`
+`https://github.com/Kotziamanis/ToFanari/releases`
 
 Download **`PDFMarkerTool.exe`** directly from the latest release.  
 (To create a release from the Mac, see the short “Optional” section at the end.)
