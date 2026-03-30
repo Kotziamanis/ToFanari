@@ -5,6 +5,8 @@ venv/
 .venv/
 .env
 .DS_Store
+# macOS AppleDouble / resource forks
+._*
 # Bunny credentials saved from GUI / CLI
 settings/bunny_credentials.json
 

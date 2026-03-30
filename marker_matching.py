@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-ToFanari — Marker-based matching for Βάση Δεδομένων.
+Tofanari Main Tool — marker-based matching for Βάση Δεδομένων.
 
 Scans chapter HTML for data-audio markers, matches them to MP3 files by numeric ID.
 Used for Bunny upload, chapter merge, FlipBuilder audio placement.

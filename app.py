@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""ToFanari — Main GUI application."""
+"""Tofanari Main Tool — main GUI application (publishing workflow).
+
+Does not import or depend on pdf_marker/ (the separate PDF Marker app).
+"""
 
 import csv
 import os
@@ -111,7 +114,7 @@ from marker_matching import (
     run_stage2_postupload_save,
 )
 from ready_pdf import validate_ready_pdf, ReadyPdfValidationResult
-from tofanari_log import log_import
+from main_tool_log import log_import
 from parameters import (
     load_catalog_from_parameters,
     load_parameters,
@@ -344,7 +347,7 @@ class App:
         )
         tf = tk.Frame(hdr, bg=DARK_RED)
         tf.pack(side="left")
-        tk.Label(tf, text="ToFanari", bg=DARK_RED, fg=WHITE, font=("Georgia", 22, "bold")).pack(
+        tk.Label(tf, text="Tofanari Main Tool", bg=DARK_RED, fg=WHITE, font=("Georgia", 18, "bold")).pack(
             anchor="w"
         )
         tk.Label(
@@ -1349,7 +1352,7 @@ class App:
     def _load_parameters(self):
         """Load catalog from fixed settings/parameters.json. No file dialog."""
         path = PARAMETERS_DEFAULT_PATH
-        print(f"[ToFanari] Load Parameters: resolved path = {path}")  # temporary debug
+        print(f"[Tofanari Main Tool] Load Parameters: resolved path = {path}")  # temporary debug
         if not os.path.isfile(path):
             messagebox.showwarning("Parameters", "parameters.json not found in settings folder")
             self._update_catalog_status_label(missing=True)

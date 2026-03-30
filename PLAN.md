@@ -1,4 +1,4 @@
-# ToFanari v3 — Plan (@ context, / commands)
+# Tofanari Main Tool v3 — Plan (@ context, / commands)
 
 ## Context (@)
 
@@ -9,14 +9,14 @@
 | @pdf_ops.py | Marker, detect_markers, apply_markers — **unchanged** (no edits) |
 | @validators.py | validate_empty_book_code, validate_duplicate_positions, validate_page_numbers, validate_missing_mp3 |
 | @app.py | Tabs 1–4, Book Code, Bunny URL, MP3 folder, Validate MP3, _gen_db with validators |
-| @tofanari_v21.py | Entry point: runs App |
+| @tofanari_main_tool.py | Entry point: runs App (alias: tofanari_v21.py) |
 
 ## Commands (/)
 
 | / | Purpose |
 |---|--------|
-| `/python tofanari_v21.py` | Run app from project root |
-| `/cd c:\Users\User\ToFanari_v4` | Project root (before run) |
+| `/python tofanari_main_tool.py` | Run Tofanari Main Tool from project root |
+| `/cd <project root>` | Project root (before run) |
 | `/pip install pymupdf openpyxl` | One-time deps (or auto on first import) |
 
 ## Single-book workflow (no batch)

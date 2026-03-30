@@ -1,6 +1,6 @@
 
 # -*- coding: utf-8 -*-
-"""ToFanari — Preflight validation for database and source structure (platform-independent)."""
+"""Tofanari Main Tool — preflight validation for database and source structure (platform-independent)."""
 
 import os
 import re

@@ -10,7 +10,7 @@ Your **PDFs stay on the PC**. You only download **one program** (`PDFMarkerTool.
 
 **2.** Open this page (bookmark it — see below):
 
-`https://github.com/Kotziamanis/ToFanari/actions/workflows/build-pdf-marker-windows.yml`
+`https://github.com/Kotziamanis/tofanari-suite/actions/workflows/build-pdf-marker-windows.yml`
 
 Save that page as a **bookmark** or **Favourite** called *PDF Marker builds* (after the project is pushed to GitHub).
 
@@ -32,7 +32,7 @@ That’s the whole routine: **bookmark → green run → Artifacts → download 
 
 If you (or someone) published a version with a tag like `pdf-marker-v1.0.0`, you can skip Actions and use:
 
-`https://github.com/Kotziamanis/ToFanari/releases`
+`https://github.com/Kotziamanis/tofanari-suite/releases`
 
 Download **`PDFMarkerTool.exe`** directly from the latest release.  
 (To create a release from the Mac, see the short “Optional” section at the end.)
@@ -41,8 +41,8 @@ Download **`PDFMarkerTool.exe`** directly from the latest release.
 
 ## One-time setup (on the Mac, or once ever)
 
-1. Create a repository on GitHub and push this project (`tofanari-pdf-marker`) to the **`main`** branch.
-2. Wait until **Actions** shows a **green** run for **Build PDF Marker Tool (Windows EXE)** (about 2–3 minutes after the first push).
+1. Create a repository on GitHub and push this project (`tofanari-suite`) to the **`main`** branch.
+2. Wait until **Actions** shows a **green** run for **Build PDF Marker (Windows EXE)** (about 2–3 minutes after the first push).
 3. On the PC, do the **routine** above and bookmark the workflow page.
 
 After that, you **never need the Mac** to *use* the tool on the PC — only to change code and push when you want a new build.

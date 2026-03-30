@@ -1,4 +1,6 @@
-# ToFanari — Python 3.10+ recommended (app uses PEP 604 union types, e.g. str | None)
+# Tofanari Main Tool (`app.py`) — full dev environment for this monorepo.
+# PDF Marker alone: use only pdf_marker/requirements.txt (no openpyxl).
+# Python 3.10+ recommended.
 pymupdf>=1.23.0
 Pillow>=10.0.0
 openpyxl>=3.1.0

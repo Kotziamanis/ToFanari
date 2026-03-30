@@ -23,7 +23,7 @@ Upload report (per-file URLs):
 ### Dry run (validation + summary only, no GUI/credentials)
 
 ```bash
-cd c:\Users\User\ToFanari_v4
+cd c:\path\to\tofanari-suite
 python app.py upload_bunny --dry-run
 ```
 

@@ -384,7 +384,7 @@ def main_cli(argv: Optional[List[str]] = None) -> int:
     cdn_base = (args.cdn_base or "").strip()
     path_prefix = (args.path_prefix or BUNNY_ROOT_FOLDER).strip()
 
-    print("\nToFanari - Bunny prepare (chapter-level)")
+    print("\nTofanari Main Tool - Bunny prepare (chapter-level)")
     print(f"  Source:  {source_root}")
     print(f"  Output:  {output_root}")
     print(f"  CDN base: {cdn_base}")

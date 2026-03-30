@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""ToFanari — Constants and configuration."""
+"""Tofanari Main Tool — constants and configuration."""
 
 import os
 import re
 import sys
 
-APP_TITLE = "ToFanari — Βυζαντινή Μουσική"
+APP_TITLE = "Tofanari Main Tool — Βυζαντινή Μουσική"
 
 
 def get_settings_dir() -> str:

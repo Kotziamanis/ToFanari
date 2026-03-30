@@ -55,10 +55,10 @@ echo "Installing PyInstaller, PyMuPDF, Pillow…"
 
 echo ""
 echo "Building PDF Marker Tool.app …"
-"$PY" -m PyInstaller --noconfirm --clean pdf_marker.spec
+"$PY" -m PyInstaller --noconfirm --clean --distpath=dist --workpath=build/pdf_marker pdf_marker/pdf_marker.spec
 
 echo ""
-echo "Done: $(pwd)/dist/PDF Marker Tool.app"
+echo "Done: $(pwd)/dist/PDF Marker.app (or PDFMarkerTool onedir — see pdf_marker/pdf_marker.spec)"
 echo "If Gatekeeper blocks it: right-click the app → Open → Open."
 open "dist"
 read -r -p "Press Enter to close…"

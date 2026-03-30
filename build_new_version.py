@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ToFanari — Automated build workflow. Uses APP_VERSION from config, installs deps, builds .exe."""
+"""Tofanari Main Tool — automated build workflow. Uses APP_VERSION from config, installs deps, builds .exe."""
 
 import glob
 import os
@@ -13,9 +13,8 @@ SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 BUILD_DIR = os.path.join(SCRIPT_DIR, "build")
 DIST_DIR = os.path.join(SCRIPT_DIR, "dist")
 RELEASE_DIR = os.path.join(SCRIPT_DIR, "release")
-RELEASE_FOLDER = "ToFanari"
-PROJECT_NAME = "tofanari"
-EXPECTED_EXE = "ToFanari.exe"
+RELEASE_FOLDER = "TofanariMainTool"
+EXPECTED_EXE = "TofanariMainTool.exe"
 
 
 def get_version_from_config() -> str:
@@ -74,7 +73,7 @@ def install_dependencies():
 def build_exe(version: str) -> str:
     """
     Run PyInstaller to create a fresh executable.
-    Uses --clean to avoid reusing old cache. Output: dist/ToFanari.exe (and dist/_internal/)
+    Uses --clean to avoid reusing old cache. Output: dist/TofanariMainTool/TofanariMainTool.exe (onedir)
     """
     spec_file = os.path.join(SCRIPT_DIR, "tofanari.spec")
     # Use dedicated workpath to avoid polluting project build/ (already cleaned)
@@ -104,10 +103,10 @@ def build_exe(version: str) -> str:
         check=True,
     )
 
-    # Spec uses COLLECT (onedir): output is dist/ToFanari/ToFanari.exe + dist/ToFanari/_internal/
+    # Spec uses COLLECT (onedir): dist/TofanariMainTool/TofanariMainTool.exe + _internal/
     # Keep standard onedir structure - do NOT flatten (flattening can cause "Failed to start embedded python interpreter")
-    output_dir = os.path.join(distpath, "ToFanari")
-    exe_path = os.path.join(output_dir, "ToFanari.exe")
+    output_dir = os.path.join(distpath, RELEASE_FOLDER)
+    exe_path = os.path.join(output_dir, EXPECTED_EXE)
 
     if not os.path.isfile(exe_path):
         raise SystemExit(f"PyInstaller did not create executable at: {exe_path}")
@@ -144,12 +143,12 @@ def _create_desktop_shortcut_script(release_folder: str) -> None:
     bat_path = os.path.join(release_folder, "Create_Desktop_Shortcut.bat")
     # Use %~dp0 to get batch file's directory; PowerShell creates .lnk on Desktop
     content = r'''@echo off
-title ToFanari - Create Desktop Shortcut
+title Tofanari Main Tool - Create Desktop Shortcut
 set "FOLDER=%~dp0"
-set "EXE=%FOLDER%ToFanari.exe"
-powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $desk = [Environment]::GetFolderPath('Desktop'); $s = $ws.CreateShortcut($desk + '\ToFanari.lnk'); $s.TargetPath = '%EXE%'; $s.WorkingDirectory = '%FOLDER:~0,-1%'; $s.Save(); Write-Host 'Shortcut created: Desktop\ToFanari.lnk'"
+set "EXE=%FOLDER%TofanariMainTool.exe"
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $desk = [Environment]::GetFolderPath('Desktop'); $s = $ws.CreateShortcut($desk + '\TofanariMainTool.lnk'); $s.TargetPath = '%EXE%'; $s.WorkingDirectory = '%FOLDER:~0,-1%'; $s.Save(); Write-Host 'Shortcut created: Desktop\TofanariMainTool.lnk'"
 echo.
-echo Done. You can now launch ToFanari from your Desktop.
+echo Done. You can now launch Tofanari Main Tool from your Desktop.
 pause
 '''
     try:
@@ -161,14 +160,14 @@ pause
 
 def create_release_package(exe_path: str) -> str:
     """
-    Create portable release: release/ToFanari/ + release/ToFanari_portable.zip.
+    Create portable release: release/TofanariMainTool/ + TofanariMainTool_portable.zip.
     Returns path to release folder.
     """
     release_folder = os.path.join(RELEASE_DIR, RELEASE_FOLDER)
-    zip_path = os.path.join(RELEASE_DIR, "ToFanari_portable.zip")
+    zip_path = os.path.join(RELEASE_DIR, "TofanariMainTool_portable.zip")
     dist_folder = os.path.dirname(exe_path)
 
-    # Clean and copy dist -> release/ToFanari/
+    # Clean and copy dist -> release/TofanariMainTool/
     if os.path.isdir(release_folder):
         try:
             shutil.rmtree(release_folder, onerror=_handle_rmtree_error)
@@ -191,19 +190,19 @@ def create_release_package(exe_path: str) -> str:
     version = get_version_from_config()
     try:
         with open(readme_path, "w", encoding="utf-8") as f:
-            f.write("ToFanari — Portable Release\n")
+            f.write("Tofanari Main Tool — Portable Release\n")
             f.write("=" * 40 + "\n\n")
             f.write(f"Version: {version}\n\n")
-            f.write("IMPORTANT: Do NOT copy ToFanari.exe alone.\n")
+            f.write("IMPORTANT: Do NOT copy TofanariMainTool.exe alone.\n")
             f.write("It requires the _internal/ folder and settings/ to run.\n\n")
             f.write("USAGE:\n")
-            f.write("  1. Copy this ENTIRE 'ToFanari' folder to your desired location,\n")
-            f.write("     OR unzip ToFanari_portable.zip.\n\n")
-            f.write("  2. Run ToFanari.exe from inside the folder.\n\n")
+            f.write("  1. Copy this ENTIRE 'TofanariMainTool' folder to your desired location,\n")
+            f.write("     OR unzip TofanariMainTool_portable.zip.\n\n")
+            f.write("  2. Run TofanariMainTool.exe from inside the folder.\n\n")
             f.write("  3. Optional: Run Create_Desktop_Shortcut.bat to add a desktop\n")
             f.write("     shortcut (points to the exe in this folder, does not copy it).\n\n")
             f.write("PORTABLE: This folder is self-contained. Copy the whole folder or\n")
-            f.write("unzip ToFanari_portable.zip on another PC and run from there.\n\n")
+            f.write("unzip TofanariMainTool_portable.zip on another PC and run from there.\n\n")
             f.write("If the app fails to start on a new PC, install Microsoft Visual C++\n")
             f.write("Redistributable (latest) from microsoft.com.\n")
     except OSError:
@@ -240,13 +239,13 @@ def _is_exe_locked(path: str) -> bool:
 
 
 def main():
-    print("ToFanari — Build New Version")
+    print("Tofanari Main Tool — Build New Version")
     print("-" * 40)
     version = get_version_from_config()
     print(f"Building version: {version} (from config.APP_VERSION)")
-    dist_exe = os.path.join(DIST_DIR, "ToFanari", EXPECTED_EXE)
+    dist_exe = os.path.join(DIST_DIR, RELEASE_FOLDER, EXPECTED_EXE)
     if _is_exe_locked(dist_exe):
-        print(f"ERROR: {dist_exe} is in use. Close ToFanari.exe and retry.")
+        print(f"ERROR: {dist_exe} is in use. Close TofanariMainTool.exe and retry.")
         sys.exit(1)
     print("Cleaning build folders...")
     clean_before_build()
@@ -256,7 +255,7 @@ def main():
     exe_path = build_exe(version)
     print("Creating portable release package...")
     release_folder = create_release_package(exe_path)
-    zip_path = os.path.join(RELEASE_DIR, "ToFanari_portable.zip")
+    zip_path = os.path.join(RELEASE_DIR, "TofanariMainTool_portable.zip")
     exe_in_release = os.path.join(release_folder, EXPECTED_EXE)
 
     # Validate: launch exe briefly to confirm it starts
@@ -293,9 +292,9 @@ def main():
     print(f"  Zip archive:    {zip_path}")
     print()
     print("OPERATOR INSTRUCTIONS:")
-    print("  - Do NOT copy ToFanari.exe alone. It requires _internal/ and settings/.")
-    print("  - Copy the ENTIRE 'ToFanari' folder, or unzip ToFanari_portable.zip.")
-    print("  - Run ToFanari.exe from inside that folder.")
+    print("  - Do NOT copy TofanariMainTool.exe alone. It requires _internal/ and settings/.")
+    print("  - Copy the ENTIRE 'TofanariMainTool' folder, or unzip TofanariMainTool_portable.zip.")
+    print("  - Run TofanariMainTool.exe from inside that folder.")
     print("  - Optional: Run 'Create_Desktop_Shortcut.bat' to add a desktop shortcut.")
 
 

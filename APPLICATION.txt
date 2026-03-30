@@ -1,7 +1,9 @@
-ToFanari / PDF marker — this repo matches github.com/Kotziamanis/ToFanari.
-Primary workflow: develop on Windows — see WORK_ON_PC.md and README.md (clone, setup_windows.bat, python main.py or python app.py). No Mac required.
-PDF Marker: python main.py  (Python 3.10+; pip install -r requirements.txt)
-Full app: python app.py
-Windows EXE: build_pdf_marker_windows.bat or download from GitHub Actions Artifacts.
-Optional Mac only: build_pdf_marker_mac.command / Run_PDF_Marker_Tool.command (see older notes if you still use a Mac).
-Data: ./settings/, ./source_books/, etc. are per-machine under this folder clone.
+Monorepo: github.com/Kotziamanis/tofanari-suite (clone folder: tofanari-suite).
+Three apps — see APPLICATIONS.txt and ARCHITECTURE.md.
+
+Products (see APPLICATIONS.txt):
+  • PDF Marker — python main.py; standalone marker tool.
+  • Synch-tool — separate app; not in this repo (see synch-tool/README.txt).
+  • Tofanari Main Tool — python app.py; full publishing GUI.
+
+PC workflow: WORK_ON_PC.md, README.md.

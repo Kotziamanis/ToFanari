@@ -1,10 +1,10 @@
-# ToFanari — Testing Guide (Pilot: MIKP)
+# Tofanari Main Tool — Testing Guide (Pilot: MIKP)
 
 ## 1. How to Build the EXE
 
 ### Step-by-step
 
-1. Open a terminal in the project folder (`ToFanari_v4`).
+1. Open a terminal in the project folder (repo root).
 2. Set the version in `config.py` if needed (edit `APP_VERSION`, e.g. `"v1.5.0"`).
 3. Run: `python build_new_version.py`
 4. The script will:
@@ -16,10 +16,10 @@
 
 ### Where the EXE is located
 
-- **Main output:** `dist/ToFanari.exe`
-- **Versioned build:** `builds/ToFanari_{version}/tofanari.exe` (e.g. `builds/ToFanari_v1.5.0/tofanari.exe`)
+- **Main output:** `dist/TofanariMainTool/TofanariMainTool.exe`
+- **Portable release:** `release/TofanariMainTool/` and `release/TofanariMainTool_portable.zip` (from `build_new_version.py`)
 
-Run: `dist\ToFanari.exe` (or `.\dist\ToFanari.exe` on Windows).
+Run: `dist\TofanariMainTool\TofanariMainTool.exe` (or use the `release` folder after the script finishes).
 
 ---
 
@@ -117,7 +117,7 @@ Collection `PARAKLITIKOI` → "Παρακλητικοί".
 
 ## 6. Debug Logging
 
-Imports are logged to `settings/tofanari.log`:
+Imports are logged to `settings/main_tool.log`:
 
 ```
 [2025-03-09 14:30:00] IMPORT | book=mikp | chapter=MIKP | markers=42 | mp3_matched=42

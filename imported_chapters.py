@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ToFanari — Track imported chapters per book for merge/validation."""
+"""Tofanari Main Tool — track imported chapters per book for merge/validation."""
 
 from __future__ import annotations
 

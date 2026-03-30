@@ -1,4 +1,4 @@
-# ToFanari → Single-Book Production Tool — Implementation Plan
+# Tofanari Main Tool → Single-Book Production Tool — Implementation Plan
 
 ## STEP 1 — Implementation plan
 

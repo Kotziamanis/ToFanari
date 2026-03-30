@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-ToFanari — Bunny.net Chapter Preparation.
+Tofanari Main Tool — Bunny.net Chapter Preparation.
 
 Chapter-level validation and readiness reporting for professional publishing workflow.
 Each chapter is the master source; validation runs before upload.

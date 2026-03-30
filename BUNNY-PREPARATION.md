@@ -1,6 +1,6 @@
 # Bunny.net Chapter Preparation Guide
 
-This guide covers the **Bunny preparation stage** for the ToFanari professional publishing workflow. Chapters are validated individually before upload; merging into complete books happens later.
+This guide covers the **Bunny preparation stage** for the **Tofanari Main Tool** professional publishing workflow. Chapters are validated individually before upload; merging into complete books happens later.
 
 ---
 

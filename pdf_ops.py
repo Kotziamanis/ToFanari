@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ToFanari — PDF operations: detect markers, apply buttons."""
+"""Tofanari Main Tool — PDF operations: detect markers, apply buttons."""
 
 import re
 from dataclasses import dataclass

@@ -1,0 +1,20 @@
+Three independent applications (one purpose each):
+
+1) PDF Marker
+   - Purpose: open a PDF, mark audio-player positions by hand, save PDF / JSON.
+   - Run: python main.py  (root launcher)  OR  python pdf_marker/main.py
+   - Code folder: pdf_marker/  (main.py, marker_recovery.py, recover_pdf_from_json.py, pdf_marker.spec)
+   - Deps: pdf_marker/requirements.txt (PyMuPDF + Pillow only)
+   - Does NOT use app.py, config.py, database.py, pdf_ops.py, etc.
+
+2) Synch-tool
+   - Not in this repo. See synch-tool/README.md
+
+3) Tofanari Main Tool
+   - Purpose: full publishing workflow (parameters, ■ PDF pipeline, database, Bunny prep, …).
+   - Run: python app.py  OR  python tofanari_main_tool.py
+   - Code: app.py and modules at repo root (see tofanari-main-tool/README.md)
+   - Deps: requirements.txt (root) — includes openpyxl
+   - Does NOT import pdf_marker/
+
+See ARCHITECTURE.md for coupling rules.

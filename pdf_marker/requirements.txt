@@ -1,0 +1,3 @@
+# PDF Marker only — PyMuPDF + Pillow (Python 3.10+)
+pymupdf>=1.23.0
+Pillow>=10.0.0

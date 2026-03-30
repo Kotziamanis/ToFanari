@@ -410,7 +410,7 @@ def run_gated_upload_workflow(
         print(f"ERROR: Source not found: {source_root}", file=sys.stderr)
         return 2
 
-    print("\nToFanari - Bunny upload workflow")
+    print("\nTofanari Main Tool - Bunny upload workflow")
     print(f"  Scanning: {source_root}")
     records = discover_and_validate(source_root, cdn_base, path_prefix)
     write_workflow_report(records, workflow_report_path)

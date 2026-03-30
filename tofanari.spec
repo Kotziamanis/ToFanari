@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""ToFanari PyInstaller spec. Uses onedir mode for reliable startup."""
+"""Tofanari Main Tool — PyInstaller spec. Uses onedir mode for reliable startup."""
 
 import os
 _block_cipher = None
@@ -16,6 +16,7 @@ a = Analysis(
     hiddenimports=[
         'tkinter',
         'config',  # version source of truth
+        'main_tool_log',
         'marker_matching',  # PDF/audio workflow + JSON (ensure bundled if graph misses)
         'bunny_preparation',
     ],
@@ -33,7 +34,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='ToFanari',
+    name='TofanariMainTool',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -52,5 +53,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='ToFanari',
+    name='TofanariMainTool',
 )

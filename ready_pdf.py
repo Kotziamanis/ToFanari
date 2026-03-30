@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-ToFanari — Ready PDF validation for already-prepared chapter PDFs.
+Tofanari Main Tool — Ready PDF validation for already-prepared chapter PDFs.
 
 Validates that a PDF is suitable for the pipeline: exists, has markers,
 valid numbering, can be associated with book/chapter.
@@ -81,7 +81,7 @@ def validate_ready_pdf(
     r.marker_count = len(markers)
 
     if not markers:
-        r.errors.append("No markers (■) found in PDF. The PDF may not be prepared for ToFanari.")
+        r.errors.append("No markers (■) found in PDF. The PDF may not be prepared for Tofanari Main Tool.")
         r.report_lines = lines + ["FAIL", "", "Markers found: 0", "", "Errors:", *r.errors]
         return r
 

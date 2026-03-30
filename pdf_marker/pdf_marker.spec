@@ -1,8 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PDF Marker Tool — PyInstaller spec.
+PDF Marker — PyInstaller spec (isolated app; see pdf_marker/README.md).
 
-- macOS: onedir + BUNDLE → dist/PDF Marker Tool.app (recommended for Gatekeeper).
+- macOS: onedir + BUNDLE → dist/PDF Marker.app (recommended for Gatekeeper).
 - Windows: onefile → dist/PDFMarkerTool.exe (build_pdf_marker_windows.bat).
 """
 
@@ -25,6 +25,7 @@ a = Analysis(
         'tkinter.messagebox',
         'tkinter.ttk',
         'fitz',
+        'marker_recovery',
         'PIL',
         'PIL.Image',
         'PIL.ImageTk',
@@ -67,14 +68,14 @@ if sys.platform == 'darwin':
     )
     app = BUNDLE(
         coll,
-        name='PDF Marker Tool.app',
+        name='PDF Marker.app',
         icon=None,
-        bundle_identifier='cy.com.tofanari.pdfmarkertool',
+        bundle_identifier='com.pdfmarker.app',
         info_plist={
             'NSPrincipalClass': 'NSApplication',
             'NSHighResolutionCapable': True,
-            'CFBundleName': 'PDF Marker Tool',
-            'CFBundleDisplayName': 'PDF Marker Tool',
+            'CFBundleName': 'PDF Marker',
+            'CFBundleDisplayName': 'PDF Marker',
             'CFBundleVersion': '1.0.1',
             'CFBundleShortVersionString': '1.0.1',
             'CFBundleDocumentTypes': [

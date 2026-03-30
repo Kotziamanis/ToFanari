@@ -23,14 +23,14 @@ You do **not** need anything copied from the Mac.
 Open **PowerShell** or **Command Prompt** in the folder where you keep code, e.g. `Documents\GitHub`:
 
 ```bat
-git clone https://github.com/Kotziamanis/ToFanari.git
-cd ToFanari
+git clone https://github.com/Kotziamanis/tofanari-suite.git
+cd tofanari-suite
 ```
 
 To update later (pull latest from GitHub):
 
 ```bat
-cd ToFanari
+cd tofanari-suite
 git pull
 ```
 
@@ -38,7 +38,7 @@ git pull
 
 ## 3. Python environment (recommended)
 
-From the `ToFanari` folder:
+From the `tofanari-suite` folder:
 
 **Option A — helper script**
 
@@ -59,6 +59,12 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+For **PDF Marker only** (no Tofanari Main Tool), minimal deps:
+
+```bat
+pip install -r pdf_marker/requirements.txt
+```
+
 ---
 
 ## 4. Run the PDF Marker tool (source)
@@ -69,6 +75,8 @@ With venv activated:
 python main.py
 ```
 
+(Code lives under **`pdf_marker/`**; the root `main.py` is a small launcher.)
+
 - **Open PDF** — pick files from **any drive** (your existing PC folders).
 - **Save PDF** / **Save JSON** — outputs go where you choose in the dialog.
 
@@ -76,13 +84,15 @@ No Mac involved.
 
 ---
 
-## 5. Run the full ToFanari application
+## 5. Run Tofanari Main Tool (full publishing app)
 
 Requires **Python 3.10+** (for `str | None` syntax in `app.py`):
 
 ```bat
 python app.py
 ```
+
+(or `python tofanari_main_tool.py` — same app; see **`APPLICATIONS.txt`**)
 
 ---
 
@@ -103,7 +113,7 @@ Output: **`dist\PDFMarkerTool.exe`** — you can copy that file anywhere (anothe
 If you only want the pre-built program:
 
 1. Open:  
-   [github.com/Kotziamanis/ToFanari/actions/workflows/build-pdf-marker-windows.yml](https://github.com/Kotziamanis/ToFanari/actions/workflows/build-pdf-marker-windows.yml)
+   [github.com/Kotziamanis/tofanari-suite/actions/workflows/build-pdf-marker-windows.yml](https://github.com/Kotziamanis/tofanari-suite/actions/workflows/build-pdf-marker-windows.yml)
 2. Open the latest run with a **green** check.
 3. **Artifacts** → **PDFMarkerTool-Windows-x64** → download ZIP → extract **`PDFMarkerTool.exe`**.
 
@@ -114,7 +124,7 @@ Use **`PC_DOWNLOAD_CHEATSHEET.txt`** as a short reminder.
 ## 8. Open this folder in Cursor (optional)
 
 1. Install Cursor on Windows.
-2. **File → Open Folder** → select your `ToFanari` clone.
+2. **File → Open Folder** → select your `tofanari-suite` clone.
 3. Work with the AI assistant the same way as on Mac — the project is identical.
 
 ---

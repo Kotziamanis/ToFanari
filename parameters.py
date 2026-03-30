@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-ToFanari — Central Parameters System.
+Tofanari Main Tool — Central Parameters System.
 
 Persistent master catalog (JSON) defining:
 - Collections (e.g. MINAIO, Μηναίο)

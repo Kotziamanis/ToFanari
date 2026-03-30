@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ToFanari — Excel database export for Bunny.net / FlipBuilder / production."""
+"""Tofanari Main Tool — Excel database export for Bunny.net / FlipBuilder / production."""
 
 import os
 from typing import List, Tuple

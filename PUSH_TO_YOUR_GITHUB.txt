@@ -1,8 +1,8 @@
 Your project is already linked to:
-  https://github.com/Kotziamanis/ToFanari.git
+  https://github.com/Kotziamanis/tofanari-suite.git
 
 In Terminal:
-  cd ~/tofanari-pdf-marker
+  cd ~/tofanari-suite
   git push -u origin main --force
 
 If push fails mentioning "workflow" or "Personal Access Token":
@@ -14,7 +14,7 @@ If push fails mentioning "workflow" or "Personal Access Token":
 GitHub Desktop: sign in and Push — it usually has permission to update Actions files.
 
 After a successful push:
-  • Repo: https://github.com/Kotziamanis/ToFanari
+  • Repo: https://github.com/Kotziamanis/tofanari-suite
   • Windows EXE: Actions → latest green run → Artifacts → PDFMarkerTool-Windows-x64
 
 On your PC (no Mac needed): open WORK_ON_PC.md and README.md after you clone the repo.

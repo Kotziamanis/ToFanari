@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ToFanari — Build bookshelf from Parameters.
+Tofanari Main Tool — build bookshelf from Parameters.
 
 Reads settings/parameters.json and generates:
 - bookshelf/assets/js/books-data.js
@@ -149,7 +149,7 @@ def ensure_category_page(collection_code: str, title: str, books: list):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title} — ToFanari</title>
+    <title>{title} — Tofanari Main Tool</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>

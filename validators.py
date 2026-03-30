@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ToFanari — Validation helpers for single-book production."""
+"""Tofanari Main Tool — validation helpers for single-book production."""
 
 from typing import List, Tuple
 

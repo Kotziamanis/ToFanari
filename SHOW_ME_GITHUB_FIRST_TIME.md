@@ -21,7 +21,7 @@ Fill in only this:
 
 | Field | What to type or choose |
 |--------|-------------------------|
-| **Repository name** | `tofanari-pdf-marker` (or any name you like) |
+| **Repository name** | `tofanari-suite` (monorepo: PDF Marker + Tofanari Main Tool) |
 | **Public** or **Private** | Your choice (Public = anyone can see the code) |
 
 **Important — leave these UNCHECKED / empty:**
@@ -43,7 +43,7 @@ After creating, GitHub shows a page with a green box and commands.
 1. Find the box that says **HTTPS**.
 2. Copy the line that looks like:
 
-   `https://github.com/YOUR_USERNAME/tofanari-pdf-marker.git`
+   `https://github.com/YOUR_USERNAME/tofanari-suite.git`
 
    (`YOUR_USERNAME` will be your real GitHub username.)
 
@@ -58,7 +58,7 @@ Keep this copied — you need it in Step 5.
 3. In the Terminal window, paste this line and press **Enter**:
 
    ```bash
-   cd ~/tofanari-pdf-marker
+   cd ~/tofanari-suite
    ```
 
 ---
@@ -68,7 +68,7 @@ Keep this copied — you need it in Step 5.
 **A.** Paste this, but **replace the whole URL** with the one you copied in Step 3:
 
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/tofanari-pdf-marker.git
+git remote add origin https://github.com/YOUR_USERNAME/tofanari-suite.git
 ```
 
 Press **Enter**.
@@ -108,7 +108,7 @@ After a successful push, refresh your repository page on GitHub — you should s
 
 1. Install **GitHub Desktop**: **https://desktop.github.com**
 2. Sign in to GitHub inside the app.
-3. **File → Add Local Repository** → choose folder **`tofanari-pdf-marker`** (in your home folder).
+3. **File → Add Local Repository** → choose folder **`tofanari-suite`** (in your home folder).
 4. **Repository → Repository settings → Remote** — if empty, paste your repo URL from Step 3.
 5. Click **Publish repository** or **Push origin** if it already exists.
 

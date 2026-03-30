@@ -5,7 +5,7 @@
 
 STEP 1 — Bookmark this address in your browser:
 
-  https://github.com/Kotziamanis/ToFanari/actions/workflows/build-pdf-marker-windows.yml
+  https://github.com/Kotziamanis/tofanari-suite/actions/workflows/build-pdf-marker-windows.yml
 
 STEP 2 — Each time you want the latest program:
   • Open that bookmark
@@ -17,7 +17,7 @@ STEP 2 — Each time you want the latest program:
 Your PDF files stay on the PC. Only this .exe comes from GitHub.
 
 OPTIONAL — If you use Releases instead:
-  https://github.com/Kotziamanis/ToFanari/releases
+  https://github.com/Kotziamanis/tofanari-suite/releases
   Download PDFMarkerTool.exe from the newest release.
 
 ================================================================================

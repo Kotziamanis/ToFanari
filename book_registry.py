@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ToFanari — Book Registry: load and validate book_registry.xlsx, map chapter codes to parent books.
+"""Tofanari Main Tool — Book Registry: load and validate book_registry.xlsx, map chapter codes to parent books.
 
 Parameters structure:
 - BOOKS sheet: book code, title, optional category/mode, etc.

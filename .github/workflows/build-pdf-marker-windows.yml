@@ -1,7 +1,8 @@
 # Builds PDFMarkerTool.exe on Windows and uploads it for download (Artifacts + optional Release).
-# After you push this repo to GitHub: Actions tab → latest run → Artifacts → PDFMarkerTool-Windows-x64.zip
+# PDF Marker is separate from Tofanari Main Tool — see APPLICATIONS.txt in the repo.
+# After you push: Actions tab → latest run → Artifacts → PDFMarkerTool-Windows-x64.zip
 
-name: Build PDF Marker Tool (Windows EXE)
+name: Build PDF Marker (Windows EXE)
 
 on:
   push:
@@ -28,7 +29,7 @@ jobs:
           pip install pyinstaller pymupdf pillow
 
       - name: Build with PyInstaller
-        run: pyinstaller --noconfirm pdf_marker.spec
+        run: pyinstaller --noconfirm --distpath=dist --workpath=build/pdf_marker pdf_marker/pdf_marker.spec
 
       - name: Upload EXE (download from Actions)
         uses: actions/upload-artifact@v4
