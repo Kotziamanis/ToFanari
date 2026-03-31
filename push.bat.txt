@@ -1,0 +1,7 @@
+@echo off
+echo Saving project to GitHub...
+git add .
+git commit -m "update project"
+git push
+echo Done!
+pause

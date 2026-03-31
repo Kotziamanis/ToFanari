@@ -1,0 +1,4 @@
+ToFanari v4 — main desktop application (full workflow: PDF, markers, database, Bunny prep, registry).
+Run: python app.py   (use Python 3.10+)
+Data: ./settings/ ./source_books/ ./output_ready/ ./bookshelf/ — all relative to this folder only.
+This tree is independent from tofanari-pdf-marker and tofanari-sync.
