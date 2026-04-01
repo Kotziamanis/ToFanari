@@ -1692,21 +1692,11 @@ class PDFMarkerApp:
             messagebox.showerror("Save PDF Error", f"Failed to save PDF:\n{e}")
 
 
-def main() -> None:
+if __name__ == "__main__":
+    import tkinter as tk
+    from app import App
+
     root = tk.Tk()
-    root.geometry("1000x750")
-    app = PDFMarkerApp(root)
-
-    pdf_arg: Optional[str] = None
-    for arg in sys.argv[1:]:
-        if arg.lower().endswith(".pdf") and os.path.isfile(arg):
-            pdf_arg = os.path.abspath(arg)
-            break
-    if pdf_arg:
-        root.after(200, lambda p=pdf_arg: app.open_pdf_path(p))
-
+    app = App(root)
     root.mainloop()
 
-
-if __name__ == "__main__":
-    main()
